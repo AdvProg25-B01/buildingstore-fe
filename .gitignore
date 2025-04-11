@@ -11,13 +11,64 @@
 # production
 /build
 
-# misc
-.DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
+# logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Build output
+/build
+/dist
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+.env.*.local
+!.env.example
+
+# Editor directories and files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# OS generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*~
+
+# Cache
+/.eslintcache
+/.parcel-cache
+/.turbo
+
+# Optional package manager lock files (choose based on what you use)
+# Remove the one you use from this list if you want to commit it
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Storybook build
+/out
+
+# Misc
+*.local
+*.bak
+*.tmp
+*.swp
+
+# Next.js (if applicable in your React project)
+.next
+
+# VS Code extensions/settings sync
+.settings/

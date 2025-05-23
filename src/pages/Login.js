@@ -14,14 +14,15 @@ const Login = () => {
         e.preventDefault();
         try {
             const response = await authService.login(email, password);
-            const userRole = response.data.role;
+            const { accessToken, refreshToken, role } = response.data;
             
-            localStorage.setItem('token', response.data.token);
-            localStorage.setItem('role', userRole);
-      
-            if (userRole === 'ADMIN') {
+            localStorage.setItem('token', accessToken);
+            localStorage.setItem('refreshToken', refreshToken);
+            localStorage.setItem('role', role);
+
+            if (role === 'ADMIN') {
                 navigate('/admin-dashboard');
-            } else if (userRole === 'KASIR') {
+            } else if (role === 'KASIR') {
                 navigate('/kasir-dashboard');
             }
         } catch (error) {

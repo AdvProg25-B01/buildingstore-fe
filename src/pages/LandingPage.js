@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, Users, ShoppingCart, Package, TrendingUp, CreditCard, Truck, Shield, Store } from 'lucide-react';
+import { Users, ShoppingCart, Package, TrendingUp, CreditCard, Truck, Shield, Store } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const LandingPage = () => {

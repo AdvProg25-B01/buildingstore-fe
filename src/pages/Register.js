@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Users, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import authService from '../services/authService';
@@ -11,13 +12,14 @@ const Register = () => {
     const [role, setRole] = useState('KASIR');
     const [errorMessage, setErrorMessage] = useState('');
     const [passwordError, setPasswordError] = useState('');
+    const navigate = useNavigate();
     
     const validatePassword = () => {
         if (password !== confirmPassword) {
             setPasswordError('Passwords do not match');
             return false;
         } else if (password.length < 8) {
-            setPasswordError('Password must be at least 8 characters long');
+            setPasswordError('Password must be at least 8 characters long, with at least one uppercase letter, one lowercase letter, one special characters, and one number');
             return false;
         } else {
             setPasswordError('');
@@ -33,8 +35,10 @@ const Register = () => {
         }
         
         try {
-            await authService.register(name, email, password, role);
-            alert('Registration successful! Please log in.');
+            const response = await authService.register(name, email, password, role);
+            
+            navigate('/login');
+            alert('Registration successful! Please login with your credentials.');
         } catch (error) {
             setErrorMessage('Registration failed! Please try again.');
         }
@@ -114,13 +118,17 @@ const Register = () => {
                                     setPassword(e.target.value);
                                     if (confirmPassword) validatePassword();
                                 }}
-                                className="pl-10 block w-full py-3 border border-blue-200 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                onBlur={validatePassword}
+                                className={`pl-10 block w-full py-3 border ${
+                                    passwordError ? 'border-red-400' : 'border-blue-200'
+                                } rounded-lg focus:ring-blue-500 focus:border-blue-500`}
                                 placeholder="••••••••"
-                                minLength={6}
                                 required
                             />
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">Password must be at least 8 characters long</p>
+                        {passwordError && (
+                            <p className="text-sm text-red-600 mt-1">{passwordError}</p>
+                        )}
                     </div>
 
                     <div>

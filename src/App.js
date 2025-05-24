@@ -10,6 +10,9 @@ import AdminDashboard   from './pages/AdminDashboard';
 import KasirDashboard   from './pages/KasirDashboard';
 import CreateUser       from './pages/CreateUser';
 import ProtectedRoute   from './components/ProtectedRoute';
+import ProductListPage from './pages/ProductListPage';
+import ProductCreatePage from './pages/ProductCreatePage';
+import ProductEditPage from './pages/ProductEditPage';
 
 function App() {
   return (
@@ -20,7 +23,9 @@ function App() {
         <Route path="/"        element={<LandingPage />} />
         <Route path="/login"   element={<Login />} />
         <Route path="/register" element={<Register />} />
-
+        <Route path="/product/list" element={<ProductListPage />} />
+        <Route path="/product/create" element={<ProductCreatePage />} />
+        <Route path="/product/edit/:name" element={<ProductEditPage />} />
         {/* Admin-only */}
         <Route
           path="/admin-dashboard"

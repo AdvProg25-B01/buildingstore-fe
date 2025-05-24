@@ -1,81 +1,82 @@
 // src/pages/CustomerManagementPage.js
-import React, { useState, useEffect, useCallback, useRef } from 'react'; // Tambahkan useRef
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import customerService from '../services/customerService';
 import Modal from '../components/Modal';
 import CustomerForm from '../components/CustomerForm';
-import { PlusCircle, Edit3, Trash2, Search } from 'lucide-react'; // Tambah icon Search
-import { toast } from 'react-toastify'; // <-- Import toast
+import { PlusCircle, Edit3, Trash2, Search, Eye, ChevronLeft, ChevronRight } from 'lucide-react'; // Added Eye, ChevronLeft, ChevronRight
+import { toast } from 'react-toastify';
+
+// --- Color Palette ---
+const PRIMARY_COLOR = '#1E3A8A'; // Main web color
+const SECONDARY_COLOR = '#1D4DD5'; // Navbar color (can be used for accents)
+const WHITE_COLOR = '#FFFFFF';
+const LIGHT_GRAY_BACKGROUND = '#F0F4F8'; // A light background for sections
+const TEXT_COLOR_DARK = '#333333';
+const TEXT_COLOR_LIGHT = '#FFFFFF';
+const DANGER_COLOR = '#DC3545';
+const SUCCESS_COLOR = '#28A745'; // Kept for success messages, can be changed
+const INFO_COLOR = '#0DCAF0'; // For View History button or info messages
 
 function CustomerManagementPage() {
     const [customers, setCustomers] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null); // Error tetap bisa ditampilkan di halaman
+    const [error, setError] = useState(null);
 
-    // State untuk Modal
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    
     const [selectedCustomer, setSelectedCustomer] = useState(null);
 
-    // State untuk search
     const [searchTerm, setSearchTerm] = useState('');
     const [searchBy, setSearchBy] = useState('fullname');
-    const debounceTimeoutRef = useRef(null); // Untuk debounce search
+    const debounceTimeoutRef = useRef(null);
+
+    // --- Pagination State ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const [customersPerPage] = useState(10);
 
     const fetchCustomers = useCallback(async (term = '', by = '') => {
-        // Jika term kosong, set loading menjadi true hanya jika customers juga kosong
-        // Ini agar tidak ada flicker loading saat live search dengan term kosong
         if (term || customers.length === 0) {
             setLoading(true);
         }
         try {
             const response = await customerService.getAllCustomers(term, by);
             setCustomers(response.data);
+            setCurrentPage(1); // Reset to first page on new search/fetch
             setError(null);
         } catch (err) {
             const errorMessage = err.response?.data?.message || err.message || 'Terjadi kesalahan';
             setError('Gagal memuat data pelanggan: ' + errorMessage);
-            // toast.error('Gagal memuat data pelanggan: ' + errorMessage); // Bisa juga pakai toast untuk error fetch
             setCustomers([]);
         } finally {
             setLoading(false);
         }
-    }, [customers.length]); // Tambahkan customers.length sebagai dependency
+    }, [customers.length]); // customers.length dependency ensures initial load behavior
 
     useEffect(() => {
         fetchCustomers(searchTerm, searchBy);
-    }, [fetchCustomers]); // Panggil saat mount awal
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Initial fetch only on mount, search handled by debounce
 
-    // --- Live Search Logic ---
     useEffect(() => {
-        // Hapus timeout sebelumnya jika ada
         if (debounceTimeoutRef.current) {
             clearTimeout(debounceTimeoutRef.current);
         }
-
-        // Set timeout baru
-        // Hanya fetch jika searchTerm tidak kosong, ATAU jika searchTerm kosong tapi sebelumnya tidak kosong (untuk reset)
-        if (searchTerm.trim() !== '' || (searchTerm.trim() === '' && customers.length > 0 && !loading)) {
+        if (searchTerm.trim() !== '' || (searchTerm.trim() === '' && !loading)) {
             debounceTimeoutRef.current = setTimeout(() => {
                 fetchCustomers(searchTerm.trim(), searchBy);
-            }, 500); // Debounce 500ms
-        } else if (searchTerm.trim() === '' && !loading) {
-            // Jika searchTerm kosong dan tidak sedang loading, langsung fetch semua data (reset)
+            }, 500);
+        } else if (searchTerm.trim() === '' && !loading && customers.length > 0) { // If search term is cleared
              fetchCustomers('', searchBy);
         }
-
-
-        // Cleanup timeout saat komponen unmount atau searchTerm/searchBy berubah
         return () => {
             if (debounceTimeoutRef.current) {
                 clearTimeout(debounceTimeoutRef.current);
             }
         };
-    }, [searchTerm, searchBy, fetchCustomers, customers.length, loading]);
+    }, [searchTerm, searchBy, fetchCustomers, loading, customers.length]);
 
 
-    // --- Handler untuk Modal Tambah Pelanggan ---
     const handleOpenAddModal = () => {
         setSelectedCustomer(null);
         setIsAddModalOpen(true);
@@ -85,16 +86,15 @@ function CustomerManagementPage() {
     const handleAddCustomer = async (formData) => {
         try {
             await customerService.createCustomer(formData);
-            toast.success('Pelanggan berhasil ditambahkan!'); // Ganti alert
+            toast.success('Pelanggan berhasil ditambahkan!');
             handleCloseAddModal();
             fetchCustomers(searchTerm, searchBy);
         } catch (err) {
             const errorMessage = err.response?.data?.message || err.message || 'Terjadi kesalahan';
-            toast.error('Gagal menambahkan pelanggan: ' + errorMessage); // Ganti alert
+            toast.error('Gagal menambahkan pelanggan: ' + errorMessage);
         }
     };
 
-    // --- Handler untuk Modal Edit Pelanggan ---
     const handleOpenEditModal = (customer) => {
         setSelectedCustomer(customer);
         setIsEditModalOpen(true);
@@ -108,16 +108,15 @@ function CustomerManagementPage() {
         if (!selectedCustomer || !selectedCustomer.id) return;
         try {
             await customerService.updateCustomer(selectedCustomer.id, formData);
-            toast.success('Pelanggan berhasil diperbarui!'); // Ganti alert
+            toast.success('Pelanggan berhasil diperbarui!');
             handleCloseEditModal();
             fetchCustomers(searchTerm, searchBy);
         } catch (err) {
             const errorMessage = err.response?.data?.message || err.message || 'Terjadi kesalahan';
-            toast.error('Gagal memperbarui pelanggan: ' + errorMessage); // Ganti alert
+            toast.error('Gagal memperbarui pelanggan: ' + errorMessage);
         }
     };
 
-    // --- Handler untuk Modal Delete Pelanggan ---
     const handleOpenDeleteModal = (customer) => {
         setSelectedCustomer(customer);
         setIsDeleteModalOpen(true);
@@ -131,48 +130,59 @@ function CustomerManagementPage() {
         if (!selectedCustomer || !selectedCustomer.id) return;
         try {
             await customerService.deleteCustomer(selectedCustomer.id);
-            toast.success('Pelanggan berhasil dihapus.'); // Ganti alert
+            toast.success('Pelanggan berhasil dihapus.');
             handleCloseDeleteModal();
             fetchCustomers(searchTerm, searchBy);
         } catch (err) {
             const errorMessage = err.response?.data?.message || err.message || 'Terjadi kesalahan';
-            toast.error('Gagal menghapus pelanggan: ' + errorMessage); // Ganti alert
+            toast.error('Gagal menghapus pelanggan: ' + errorMessage);
             handleCloseDeleteModal();
         }
     };
-    
-    // Fungsi Search Customer (sekarang otomatis) - Tombol submit bisa dihilangkan
-    // const handleSearch = (e) => {
-    //     e.preventDefault();
-    //     fetchCustomers(searchTerm, searchBy);
-    // };
 
-    // Fungsi untuk mereset search bar dan memuat semua pelanggan
     const handleResetSearch = () => {
         setSearchTerm('');
-        // setSearchBy('fullname'); // Opsional: reset juga searchBy jika diinginkan
-        // fetchCustomers('', searchBy); // fetchCustomers akan dipicu oleh useEffect karena searchTerm berubah
+        // fetchCustomers('', searchBy); // useEffect for searchTerm will trigger this
     };
 
+    // --- View History Handler (Placeholder) ---
+    const handleViewHistory = (customer) => {
+        toast.info(`Fitur "Lihat Riwayat" untuk ${customer.fullName} akan segera hadir!`);
+        // When BE is ready, you might open a new modal or navigate to a history page:
+        // setViewingHistoryFor(customer);
+        // setIsHistoryModalOpen(true);
+    };
 
-    if (loading && customers.length === 0) return <p style={{ textAlign: 'center', marginTop: '20px' }}>Loading pelanggan...</p>;
+    // --- Pagination Logic ---
+    const indexOfLastCustomer = currentPage * customersPerPage;
+    const indexOfFirstCustomer = indexOfLastCustomer - customersPerPage;
+    const currentCustomers = customers.slice(indexOfFirstCustomer, indexOfLastCustomer);
+    const totalPages = Math.ceil(customers.length / customersPerPage);
+
+    const paginate = (pageNumber) => {
+        if (pageNumber < 1 || pageNumber > totalPages) return;
+        setCurrentPage(pageNumber);
+    };
+
+    if (loading && customers.length === 0) return <p style={{ textAlign: 'center', marginTop: '20px', color: TEXT_COLOR_DARK }}>Loading pelanggan...</p>;
 
     return (
-        <div style={{ padding: '20px', maxWidth: '1200px', margin: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h1 style={{ margin: 0 }}>Manajemen Pelanggan</h1>
+        <div style={{ padding: '20px', maxWidth: '1200px', margin: 'auto', backgroundColor: WHITE_COLOR, minHeight: '100vh' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
+                <h1 style={{ margin: 0, color: PRIMARY_COLOR, fontSize: '2rem' }}>Manajemen Pelanggan</h1>
                 <button 
                     onClick={handleOpenAddModal}
                     style={{ 
                         padding: '10px 20px', 
-                        backgroundColor: '#28a745', 
-                        color: 'white', 
+                        backgroundColor: PRIMARY_COLOR, 
+                        color: WHITE_COLOR, 
                         border: 'none', 
                         borderRadius: '5px', 
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        fontSize: '1em'
+                        fontSize: '1em',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                     }}
                 >
                     <PlusCircle size={20} style={{ marginRight: '8px' }} />
@@ -180,117 +190,220 @@ function CustomerManagementPage() {
                 </button>
             </div>
 
-            {error && <p style={{ color: 'red', textAlign: 'center', marginBottom: '15px', padding: '10px', background: '#ffebee', border: '1px solid #ef9a9a', borderRadius: '4px' }}>{error}</p>}
+            {error && <p style={{ color: DANGER_COLOR, textAlign: 'center', marginBottom: '15px', padding: '10px', background: '#f8d7da', border: `1px solid ${DANGER_COLOR}`, borderRadius: '4px' }}>{error}</p>}
 
-            {/* Fitur Live Search */}
-            <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center', padding: '15px', background: '#f8f9fa', borderRadius: '5px' }}>
+            <div style={{ marginBottom: '25px', display: 'flex', gap: '10px', alignItems: 'center', padding: '15px', background: LIGHT_GRAY_BACKGROUND, borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                 <div style={{ position: 'relative', flexGrow: 1 }}>
-                    <Search size={20} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#6c757d' }} />
+                    <Search size={20} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#6c757d' }} />
                     <input 
                         type="text" 
                         placeholder="Ketik untuk mencari..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)} 
-                        style={{padding: '10px 10px 10px 40px', width: '100%', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box'}}
+                        style={{
+                            padding: '10px 10px 10px 40px', 
+                            width: '100%', 
+                            border: '1px solid #ced4da', 
+                            borderRadius: '4px', 
+                            boxSizing: 'border-box',
+                            color: TEXT_COLOR_DARK
+                        }}
                     />
                 </div>
-                <select value={searchBy} onChange={(e) => setSearchBy(e.target.value)} style={{padding: '10px', border: '1px solid #ccc', borderRadius: '4px'}}>
+                <select 
+                    value={searchBy} 
+                    onChange={(e) => setSearchBy(e.target.value)} 
+                    style={{
+                        padding: '10px', 
+                        border: '1px solid #ced4da', 
+                        borderRadius: '4px', 
+                        backgroundColor: WHITE_COLOR,
+                        color: TEXT_COLOR_DARK
+                    }}
+                >
                     <option value="fullname">Nama</option>
                     <option value="email">Email</option>
                     <option value="phonenumber">Telepon</option>
                 </select>
-                {/* Tombol Cari dan Reset bisa dihilangkan karena search otomatis */}
-                {searchTerm && ( // Tampilkan tombol X untuk clear search term
+                {searchTerm && (
                     <button 
                         type="button" 
                         onClick={handleResetSearch} 
                         title="Clear Search"
-                        style={{padding: '8px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', color: '#6c757d', fontSize: '1.2em' }}
+                        style={{
+                            padding: '8px', 
+                            backgroundColor: 'transparent', 
+                            border: 'none', 
+                            cursor: 'pointer', 
+                            color: '#6c757d', 
+                            fontSize: '1.5em',
+                            lineHeight: '1'
+                        }}
                     >
                         × 
                     </button>
                 )}
             </div>
 
-            {/* Tabel Daftar Pelanggan */}
-            {/* Kondisi loading di sini agar tidak hilang saat live search */}
-            {loading && customers.length > 0 && <p style={{ textAlign: 'center' }}>Memuat data...</p>} 
-            {!loading && customers.length === 0 && searchTerm && <p style={{ textAlign: 'center', padding: '20px', background: '#f8f9fa', borderRadius: '5px' }}>Pelanggan tidak ditemukan dengan kata kunci "{searchTerm}".</p>}
-            {!loading && customers.length === 0 && !searchTerm && <p style={{ textAlign: 'center', padding: '20px', background: '#f8f9fa', borderRadius: '5px' }}>Belum ada data pelanggan.</p>}
+            {loading && customers.length > 0 && <p style={{ textAlign: 'center', color: TEXT_COLOR_DARK }}>Memuat data...</p>} 
+            {!loading && customers.length === 0 && searchTerm && <p style={{ textAlign: 'center', padding: '20px', background: LIGHT_GRAY_BACKGROUND, borderRadius: '5px', color: TEXT_COLOR_DARK }}>Pelanggan tidak ditemukan dengan kata kunci "{searchTerm}".</p>}
+            {!loading && customers.length === 0 && !searchTerm && <p style={{ textAlign: 'center', padding: '20px', background: LIGHT_GRAY_BACKGROUND, borderRadius: '5px', color: TEXT_COLOR_DARK }}>Belum ada data pelanggan.</p>}
             
             {customers.length > 0 && (
-                <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                        {/* ... isi tabel tetap sama ... */}
-                        <thead style={{backgroundColor: '#e9ecef'}}>
-                            <tr>
-
-                                <th style={{padding: '12px 15px', borderBottom: '2px solid #dee2e6'}}>Nama Lengkap</th>
-                                <th style={{padding: '12px 15px', borderBottom: '2px solid #dee2e6'}}>Email</th>
-                                <th style={{padding: '12px 15px', borderBottom: '2px solid #dee2e6'}}>No. Telepon</th>
-                                <th style={{padding: '12px 15px', borderBottom: '2px solid #dee2e6'}}>Alamat</th>
-                                <th style={{padding: '12px 15px', borderBottom: '2px solid #dee2e6'}}>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {customers.map(customer => (
-                                <tr key={customer.id} style={{borderBottom: '1px solid #dee2e6'}}>
-
-                                    <td style={{padding: '12px 15px'}}>{customer.fullName}</td>
-                                    <td style={{padding: '12px 15px'}}>{customer.email}</td>
-                                    <td style={{padding: '12px 15px'}}>{customer.phoneNumber || '-'}</td>
-                                    <td style={{padding: '12px 15px'}}>{customer.address || '-'}</td>
-                                    
-                                    <td style={{padding: '12px 15px', display: 'flex', gap: '10px'}}>
-                                        <button onClick={() => handleOpenEditModal(customer)} title="Edit" style={{background: 'none', border: 'none', cursor: 'pointer', color: '#007bff'}}>
-                                            <Edit3 size={20} />
-                                        </button>
-                                        <button onClick={() => handleOpenDeleteModal(customer)} title="Delete" style={{background: 'none', border: 'none', cursor: 'pointer', color: '#dc3545'}}>
-                                            <Trash2 size={20} />
-                                        </button>
-                                    </td>
+                <>
+                    <div style={{ overflowX: 'auto', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', borderRadius: '8px' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                            <thead style={{backgroundColor: PRIMARY_COLOR, color: WHITE_COLOR}}>
+                                <tr>
+                                    <th style={{padding: '12px 15px'}}>Nama Lengkap</th>
+                                    <th style={{padding: '12px 15px'}}>Email</th>
+                                    <th style={{padding: '12px 15px'}}>No. Telepon</th>
+                                    <th style={{padding: '12px 15px'}}>Alamat</th>
+                                    <th style={{padding: '12px 15px', textAlign: 'right'}}>Total Transaksi</th>
+                                    <th style={{padding: '12px 15px', textAlign: 'right'}}>Total Belanja (Rp)</th>
+                                    <th style={{padding: '12px 15px', textAlign: 'center'}}>Aksi</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                {currentCustomers.map(customer => (
+                                    <tr key={customer.id} style={{borderBottom: '1px solid #dee2e6', backgroundColor: WHITE_COLOR }}>
+                                        <td style={{padding: '12px 15px', color: TEXT_COLOR_DARK}}>{customer.fullName}</td>
+                                        <td style={{padding: '12px 15px', color: TEXT_COLOR_DARK}}>{customer.email}</td>
+                                        <td style={{padding: '12px 15px', color: TEXT_COLOR_DARK}}>{customer.phoneNumber || '-'}</td>
+                                        <td style={{padding: '12px 15px', color: TEXT_COLOR_DARK, maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={customer.address}>{customer.address || '-'}</td>
+                                        <td style={{padding: '12px 15px', color: TEXT_COLOR_DARK, textAlign: 'right'}}>
+                                            {customer.totalTransactions || 0} {/* Placeholder */}
+                                        </td>
+                                        <td style={{padding: '12px 15px', color: TEXT_COLOR_DARK, textAlign: 'right'}}>
+                                            {new Intl.NumberFormat('id-ID').format(customer.totalShoppingAmount || 0)} {/* Placeholder */}
+                                        </td>
+                                        <td style={{padding: '10px 15px', display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center'}}>
+                                            <button 
+                                                onClick={() => handleViewHistory(customer)} 
+                                                title="Lihat Riwayat" 
+                                                style={{background: 'none', border: 'none', cursor: 'pointer', color: INFO_COLOR, padding: '5px'}}
+                                            >
+                                                <Eye size={20} />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleOpenEditModal(customer)} 
+                                                title="Edit" 
+                                                style={{background: 'none', border: 'none', cursor: 'pointer', color: PRIMARY_COLOR, padding: '5px'}}
+                                            >
+                                                <Edit3 size={20} />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleOpenDeleteModal(customer)} 
+                                                title="Delete" 
+                                                style={{background: 'none', border: 'none', cursor: 'pointer', color: DANGER_COLOR, padding: '5px'}}
+                                            >
+                                                <Trash2 size={20} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '25px', padding: '10px', userSelect: 'none' }}>
+                            <button
+                                onClick={() => paginate(currentPage - 1)}
+                                disabled={currentPage === 1}
+                                style={{
+                                    marginRight: '10px',
+                                    padding: '8px 12px',
+                                    backgroundColor: currentPage === 1 ? '#e9ecef' : PRIMARY_COLOR,
+                                    color: currentPage === 1 ? '#6c757d' : WHITE_COLOR,
+                                    border: `1px solid ${currentPage === 1 ? '#ced4da' : PRIMARY_COLOR}`,
+                                    borderRadius: '4px',
+                                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}
+                            >
+                                <ChevronLeft size={18} style={{marginRight: '4px'}} />
+                                Sebelumnya
+                            </button>
+                            <span style={{ color: TEXT_COLOR_DARK, margin: '0 10px' }}>
+                                Halaman {currentPage} dari {totalPages}
+                            </span>
+                            <button
+                                onClick={() => paginate(currentPage + 1)}
+                                disabled={currentPage === totalPages}
+                                style={{
+                                    marginLeft: '10px',
+                                    padding: '8px 12px',
+                                    backgroundColor: currentPage === totalPages ? '#e9ecef' : PRIMARY_COLOR,
+                                    color: currentPage === totalPages ? '#6c757d' : WHITE_COLOR,
+                                    border: `1px solid ${currentPage === totalPages ? '#ced4da' : PRIMARY_COLOR}`,
+                                    borderRadius: '4px',
+                                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}
+                            >
+                                Selanjutnya
+                                <ChevronRight size={18} style={{marginLeft: '4px'}}/>
+                            </button>
+                        </div>
+                    )}
+                </>
             )}
 
-            {/* Modal untuk Tambah Pelanggan */}
             <Modal isOpen={isAddModalOpen} onClose={handleCloseAddModal} title="Tambah Pelanggan Baru">
                 <CustomerForm 
                     onSubmit={handleAddCustomer} 
                     onCancel={handleCloseAddModal}
                     isEditing={false} 
+                    // Pass colors if CustomerForm needs them
+                    // primaryColor={PRIMARY_COLOR}
+                    // whiteColor={WHITE_COLOR}
                 />
             </Modal>
 
-            {/* Modal untuk Edit Pelanggan */}
             <Modal isOpen={isEditModalOpen} onClose={handleCloseEditModal} title="Edit Data Pelanggan">
                 <CustomerForm 
                     initialData={selectedCustomer} 
                     onSubmit={handleUpdateCustomer} 
                     onCancel={handleCloseEditModal}
-                    isEditing={true} 
+                    isEditing={true}
+                    // primaryColor={PRIMARY_COLOR}
+                    // whiteColor={WHITE_COLOR}
                 />
             </Modal>
 
-            {/* Modal untuk Konfirmasi Delete */}
             <Modal isOpen={isDeleteModalOpen} onClose={handleCloseDeleteModal} title="Konfirmasi Hapus Pelanggan">
                 {selectedCustomer && (
                     <div>
-                        <p>Apakah Anda yakin ingin menghapus pelanggan dengan nama: <strong>{selectedCustomer.fullName}</strong> (ID: {selectedCustomer.id})?</p>
-                        <p style={{color: 'red', fontSize: '0.9em'}}>Tindakan ini tidak dapat diurungkan.</p>
+                        <p style={{color: TEXT_COLOR_DARK}}>Apakah Anda yakin ingin menghapus pelanggan dengan nama: <strong>{selectedCustomer.fullName}</strong> (ID: {selectedCustomer.id})?</p>
+                        <p style={{color: DANGER_COLOR, fontSize: '0.9em'}}>Tindakan ini tidak dapat diurungkan.</p>
                         <div style={{ textAlign: 'right', marginTop: '20px' }}>
                             <button 
                                 onClick={handleCloseDeleteModal} 
-                                style={{ marginRight: '10px', padding: '10px 20px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                                style={{ 
+                                    marginRight: '10px', 
+                                    padding: '10px 20px', 
+                                    backgroundColor: '#6c757d', // Standard gray for cancel
+                                    color: WHITE_COLOR, 
+                                    border: 'none', 
+                                    borderRadius: '4px', 
+                                    cursor: 'pointer' 
+                                }}
                             >
                                 Batal
                             </button>
                             <button 
                                 onClick={handleDeleteCustomer} 
-                                style={{ padding: '10px 20px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                                style={{ 
+                                    padding: '10px 20px', 
+                                    backgroundColor: DANGER_COLOR, 
+                                    color: WHITE_COLOR, 
+                                    border: 'none', 
+                                    borderRadius: '4px', 
+                                    cursor: 'pointer' 
+                                }}
                             >
                                 Ya, Hapus
                             </button>

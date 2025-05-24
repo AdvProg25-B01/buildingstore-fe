@@ -224,34 +224,23 @@ function CustomerManagementPage() {
                         {/* ... isi tabel tetap sama ... */}
                         <thead style={{backgroundColor: '#e9ecef'}}>
                             <tr>
-                                <th style={{padding: '12px 15px', borderBottom: '2px solid #dee2e6'}}>ID</th>
+
                                 <th style={{padding: '12px 15px', borderBottom: '2px solid #dee2e6'}}>Nama Lengkap</th>
                                 <th style={{padding: '12px 15px', borderBottom: '2px solid #dee2e6'}}>Email</th>
                                 <th style={{padding: '12px 15px', borderBottom: '2px solid #dee2e6'}}>No. Telepon</th>
                                 <th style={{padding: '12px 15px', borderBottom: '2px solid #dee2e6'}}>Alamat</th>
-                                <th style={{padding: '12px 15px', borderBottom: '2px solid #dee2e6'}}>Status</th>
                                 <th style={{padding: '12px 15px', borderBottom: '2px solid #dee2e6'}}>Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             {customers.map(customer => (
                                 <tr key={customer.id} style={{borderBottom: '1px solid #dee2e6'}}>
-                                    <td style={{padding: '12px 15px', wordBreak: 'break-all', fontSize: '0.9em'}}>{customer.id}</td>
+
                                     <td style={{padding: '12px 15px'}}>{customer.fullName}</td>
                                     <td style={{padding: '12px 15px'}}>{customer.email}</td>
                                     <td style={{padding: '12px 15px'}}>{customer.phoneNumber || '-'}</td>
                                     <td style={{padding: '12px 15px'}}>{customer.address || '-'}</td>
-                                    <td style={{padding: '12px 15px'}}>
-                                        <span style={{
-                                            padding: '5px 10px', 
-                                            borderRadius: '15px', 
-                                            color: 'white', 
-                                            backgroundColor: customer.isActive ? '#28a745' : '#dc3545',
-                                            fontSize: '0.85em'
-                                        }}>
-                                            {customer.isActive ? 'Aktif' : 'Nonaktif'}
-                                        </span>
-                                    </td>
+                                    
                                     <td style={{padding: '12px 15px', display: 'flex', gap: '10px'}}>
                                         <button onClick={() => handleOpenEditModal(customer)} title="Edit" style={{background: 'none', border: 'none', cursor: 'pointer', color: '#007bff'}}>
                                             <Edit3 size={20} />

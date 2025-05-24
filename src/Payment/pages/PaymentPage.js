@@ -6,7 +6,7 @@ function PaymentPage() {
 
     const handleCreatePayment = () => {
         console.log("Tombol 'Buat Pembayaran' diklik.");
-        navigate('/pembayaran/buat');
+        navigate('/payment/create');
     };
 
     const handleUpdatePayment = () => {

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPayment as createPaymentApi } from '../api/PaymentApi';
+import customerService from '../../services/customerService';
 
 function CreatePaymentPage() {
     const navigate = useNavigate();
@@ -9,17 +10,49 @@ function CreatePaymentPage() {
     const [amount, setAmount] = useState('');
     const [method, setMethod] = useState('');
     const [status, setStatus] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState(null);
+
+    const [customers, setCustomers] = useState([]);
+    const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
+    const [fetchCustomersError, setFetchCustomersError] = useState(null);
+
+    useEffect(() => {
+        const fetchCustomers = async () => {
+            setIsLoadingCustomers(true);
+            setFetchCustomersError(null);
+            try {
+                const response = await customerService.getAllCustomers();
+                if (response && response.data) {
+                    setCustomers(response.data);
+                } else {
+                    setCustomers([]);
+                    console.warn("Format data pelanggan tidak sesuai harapan:", response);
+                }
+            } catch (error) {
+                console.error("Gagal mengambil daftar pelanggan:", error);
+                setFetchCustomersError("Gagal memuat daftar pelanggan. Silakan coba lagi nanti.");
+            } finally {
+                setIsLoadingCustomers(false);
+            }
+        };
+
+        fetchCustomers();
+    }, []);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-        setIsLoading(true);
-        setError(null);
+        setIsSubmitting(true);
+        setSubmitError(null);
 
+        if (!customerId) {
+            setSubmitError("Silakan pilih pelanggan.");
+            setIsSubmitting(false);
+            return;
+        }
         if (!status) {
-            setError("Silakan pilih status pembayaran.");
-            setIsLoading(false);
+            setSubmitError("Silakan pilih status pembayaran.");
+            setIsSubmitting(false);
             return;
         }
 
@@ -36,16 +69,16 @@ function CreatePaymentPage() {
             console.log("Pembayaran berhasil dibuat via API:", createdPayment);
 
             alert('Pembayaran baru berhasil dibuat!');
-            navigate('/pembayaran');
+            navigate('/payment');
         } catch (apiError) {
             console.error("Gagal membuat pembayaran via API:", apiError);
             const errorMessage = apiError.response?.data?.message ||
                 apiError.message ||
                 "Terjadi kesalahan saat membuat pembayaran.";
-            setError(errorMessage);
+            setSubmitError(errorMessage);
             alert(`Gagal membuat pembayaran: ${errorMessage}`);
         } finally {
-            setIsLoading(false);
+            setIsSubmitting(false);
         }
     };
 
@@ -137,7 +170,7 @@ function CreatePaymentPage() {
         marginTop: '10px',
         width: '100%',
         transform: 'scale(1)',
-        opacity: isLoading ? 0.7 : 1,
+        opacity: isSubmitting ? 0.7 : 1,
     };
 
     const hoverSubmitButtonStyle = {
@@ -173,7 +206,7 @@ function CreatePaymentPage() {
         boxSizing: 'border-box',
     };
 
-    const errorStyle = {
+    const errorTextStyle = {
         ...messageStyle,
         backgroundColor: '#5c2a2a',
         color: errorColor,
@@ -190,16 +223,28 @@ function CreatePaymentPage() {
             <main style={mainStyle}>
                 <form onSubmit={handleSubmit} style={formStyle}>
                     <div style={formGroupStyle}>
-                        <label htmlFor="customerId" style={labelStyle}>ID Pelanggan:</label>
-                        <input
-                            type="text"
-                            id="customerId"
-                            value={customerId}
-                            onChange={(e) => setCustomerId(e.target.value)}
-                            style={inputStyle}
-                            required
-                            disabled={isLoading}
-                        />
+                        <label htmlFor="customerId" style={labelStyle}>Pelanggan:</label>
+                        {isLoadingCustomers ? (
+                            <p style={{ color: subtleTextColor }}>Memuat daftar pelanggan...</p>
+                        ) : fetchCustomersError ? (
+                            <p style={{ color: errorColor }}>{fetchCustomersError}</p>
+                        ) : (
+                            <select
+                                id="customerId"
+                                value={customerId}
+                                onChange={(e) => setCustomerId(e.target.value)}
+                                style={inputStyle}
+                                required
+                                disabled={isSubmitting}
+                            >
+                                <option value="" disabled>Pilih pelanggan...</option>
+                                {customers.map((customer) => (
+                                    <option key={customer.id} value={customer.id}>
+                                        {customer.fullName || customer.name || `Customer ID: ${customer.id}`}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
                     </div>
 
                     <div style={formGroupStyle}>
@@ -213,7 +258,7 @@ function CreatePaymentPage() {
                             required
                             min="0.01"
                             step="0.01"
-                            disabled={isLoading}
+                            disabled={isSubmitting}
                         />
                     </div>
 
@@ -225,7 +270,7 @@ function CreatePaymentPage() {
                             onChange={(e) => setMethod(e.target.value)}
                             style={inputStyle}
                             required
-                            disabled={isLoading}
+                            disabled={isSubmitting}
                         >
                             <option value="" disabled>Pilih metode...</option>
                             <option value="Credit Card">Kartu Kredit</option>
@@ -246,7 +291,7 @@ function CreatePaymentPage() {
                             onChange={(e) => setStatus(e.target.value)}
                             style={inputStyle}
                             required
-                            disabled={isLoading}
+                            disabled={isSubmitting}
                         >
                             <option value="" disabled>Pilih status...</option>
                             <option value="CICILAN">Cicilan</option>
@@ -254,33 +299,33 @@ function CreatePaymentPage() {
                         </select>
                     </div>
 
-                    {error && (
-                        <div style={errorStyle}>
-                            {error}
+                    {submitError && (
+                        <div style={errorTextStyle}>
+                            {submitError}
                         </div>
                     )}
 
                     <button
                         type="submit"
                         style={submitButtonStyle}
-                        disabled={isLoading}
-                        onMouseEnter={(e) => { if (!isLoading) Object.assign(e.target.style, hoverSubmitButtonStyle);}}
-                        onMouseLeave={(e) => { if (!isLoading) Object.assign(e.target.style, {
+                        disabled={isSubmitting}
+                        onMouseEnter={(e) => { if (!isSubmitting) Object.assign(e.target.style, hoverSubmitButtonStyle);}}
+                        onMouseLeave={(e) => { if (!isSubmitting) Object.assign(e.target.style, {
                             backgroundColor: submitButtonStyle.backgroundColor,
                             transform: submitButtonStyle.transform,
                             boxShadow: submitButtonStyle.boxShadow
                         });}}
                     >
-                        {isLoading ? 'Menyimpan...' : 'Simpan Pembayaran'}
+                        {isSubmitting ? 'Menyimpan...' : 'Simpan Pembayaran'}
                     </button>
                 </form>
 
                 <button
-                    onClick={() => navigate('/pembayaran')}
+                    onClick={() => navigate('/payment')}
                     style={backButtonStyle}
-                    disabled={isLoading}
-                    onMouseEnter={(e) => { if (!isLoading) Object.assign(e.target.style, hoverBackButtonStyle);}}
-                    onMouseLeave={(e) => { if (!isLoading) Object.assign(e.target.style, {
+                    disabled={isSubmitting}
+                    onMouseEnter={(e) => { if (!isSubmitting) Object.assign(e.target.style, hoverBackButtonStyle);}}
+                    onMouseLeave={(e) => { if (!isSubmitting) Object.assign(e.target.style, {
                         backgroundColor: backButtonStyle.backgroundColor,
                         color: backButtonStyle.color
                     });}}

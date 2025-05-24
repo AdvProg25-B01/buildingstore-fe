@@ -1,22 +1,21 @@
 // src/pages/CustomerManagementPage.js
 import React, { useState, useEffect } from 'react';
 import customerService from '../services/customerService'; // Import service kita
-// Anda mungkin perlu membuat komponen CustomerTable dan CustomerForm nanti
-// import CustomerTable from '../components/CustomerTable';
-// import CustomerForm from '../components/CustomerForm';
 
 function CustomerManagementPage() {
     const [customers, setCustomers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // State untuk form tambah pelanggan
-    const [newCustomer, setNewCustomer] = useState({
+    // State untuk form (digunakan untuk create dan edit)
+    const [currentCustomer, setCurrentCustomer] = useState({
+        id: null, // Akan diisi saat mode edit
         fullName: '',
         phoneNumber: '',
         email: '',
         address: '',
     });
+    const [isEditing, setIsEditing] = useState(false); // Status apakah sedang mode edit
 
     // State untuk search
     const [searchTerm, setSearchTerm] = useState('');
@@ -42,27 +41,74 @@ function CustomerManagementPage() {
         fetchCustomers();
     }, []); // Array kosong berarti hanya dijalankan sekali saat mount
 
-    const handleInputChange = (e) => {
+    // Handle input change untuk form
+    const handleFormInputChange = (e) => {
         const { name, value } = e.target;
-        setNewCustomer({ ...newCustomer, [name]: value });
+        setCurrentCustomer(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleCreateCustomer = async (e) => {
+    // Handle submit form (untuk create dan update)
+    const handleFormSubmit = async (e) => {
         e.preventDefault(); // Mencegah reload halaman standar form HTML
-        if (!newCustomer.fullName || !newCustomer.email) {
+        if (!currentCustomer.fullName || !currentCustomer.email) {
             alert('Nama Lengkap dan Email wajib diisi!');
             return;
         }
-        try {
-            await customerService.createCustomer(newCustomer);
-            alert('Pelanggan berhasil ditambahkan!');
-            setNewCustomer({ fullName: '', phoneNumber: '', email: '', address: '' }); // Reset form
-            fetchCustomers(); // Muat ulang daftar pelanggan
-        } catch (err) {
-            alert('Gagal menambahkan pelanggan: ' + (err.response?.data?.message || err.message));
+
+        // Payload data yang akan dikirim, sesuai dengan CreateCustomerRequestDTO atau UpdateCustomerRequestDTO
+        const customerDataPayload = {
+            fullName: currentCustomer.fullName,
+            phoneNumber: currentCustomer.phoneNumber,
+            email: currentCustomer.email,
+            address: currentCustomer.address,
+        };
+
+        if (isEditing) { // Jika mode edit, panggil updateCustomer
+            try {
+                await customerService.updateCustomer(currentCustomer.id, customerDataPayload);
+                alert('Pelanggan berhasil diperbarui!');
+                setIsEditing(false); // Keluar dari mode edit
+            } catch (err) {
+                alert('Gagal memperbarui pelanggan: ' + (err.response?.data?.message || err.message));
+                // Optional: jangan reset form jika gagal, agar pengguna bisa koreksi
+                // return; 
+            }
+        } else { // Jika bukan mode edit, panggil createCustomer
+            try {
+                await customerService.createCustomer(customerDataPayload);
+                alert('Pelanggan berhasil ditambahkan!');
+            } catch (err) {
+                alert('Gagal menambahkan pelanggan: ' + (err.response?.data?.message || err.message));
+                // Optional: jangan reset form jika gagal
+                // return;
+            }
         }
+        
+        // Reset form dan muat ulang daftar pelanggan setelah operasi sukses (atau selalu)
+        setCurrentCustomer({ id: null, fullName: '', phoneNumber: '', email: '', address: '' });
+        fetchCustomers(searchTerm, searchBy); // Muat ulang daftar pelanggan dengan filter search jika ada
+    };
+    
+    // Handle klik tombol Edit pada baris tabel
+    const handleEditClick = (customer) => {
+        setIsEditing(true);
+        setCurrentCustomer({ // Isi form dengan data pelanggan yang dipilih
+            id: customer.id,
+            fullName: customer.fullName,
+            phoneNumber: customer.phoneNumber || '', // Handle jika null/undefined dari backend
+            email: customer.email,
+            address: customer.address || '', // Handle jika null/undefined dari backend
+        });
+        window.scrollTo(0, 0); // Scroll ke atas halaman agar form terlihat (opsional)
     };
 
+    // Handle klik tombol Batal Edit
+    const handleCancelEdit = () => {
+        setIsEditing(false);
+        setCurrentCustomer({ id: null, fullName: '', phoneNumber: '', email: '', address: '' }); // Reset form
+    };
+
+    // Fungsi Delete Customer (sudah ada dan OK)
     const handleDeleteCustomer = async (customerId) => {
         if (window.confirm('Apakah Anda yakin ingin menghapus pelanggan ini?')) {
             try {
@@ -75,13 +121,14 @@ function CustomerManagementPage() {
         }
     };
     
+    // Fungsi Search Customer (sudah ada dan OK)
     const handleSearch = (e) => {
         e.preventDefault();
         fetchCustomers(searchTerm, searchBy);
     };
 
-    if (loading) return <p>Loading pelanggan...</p>;
-    // if (error) return <p style={{ color: 'red' }}>Error: {error}</p>; // Komentari dulu jika ingin tetap menampilkan form dan tabel
+    // Tampilkan loading hanya jika data belum ada sama sekali
+    if (loading && customers.length === 0) return <p>Loading pelanggan...</p>;
 
     return (
         <div style={{ padding: '20px' }}>
@@ -89,77 +136,92 @@ function CustomerManagementPage() {
 
             {error && <p style={{ color: 'red' }}>Error: {error}</p>}
 
-            {/* Form Tambah Pelanggan */}
-            <h2>Tambah Pelanggan Baru</h2>
-            <form onSubmit={handleCreateCustomer} style={{ marginBottom: '20px' }}>
-                <div>
-                    <label>Nama Lengkap: </label>
-                    <input type="text" name="fullName" value={newCustomer.fullName} onChange={handleInputChange} required />
-                </div>
-                <div>
-                    <label>Email: </label>
-                    <input type="email" name="email" value={newCustomer.email} onChange={handleInputChange} required />
-                </div>
-                <div>
-                    <label>No. Telepon: </label>
-                    <input type="text" name="phoneNumber" value={newCustomer.phoneNumber} onChange={handleInputChange} />
-                </div>
-                <div>
-                    <label>Alamat: </label>
-                    <input type="text" name="address" value={newCustomer.address} onChange={handleInputChange} />
-                </div>
-                <button type="submit">Tambah Pelanggan</button>
-            </form>
+            {/* Form Dinamis untuk Tambah/Edit Pelanggan */}
+            <div style={{ marginBottom: '30px', border: '1px solid #ccc', padding: '20px', borderRadius: '8px' }}>
+                <h2>{isEditing ? 'Edit Pelanggan' : 'Tambah Pelanggan Baru'}</h2>
+                {isEditing && <p style={{fontSize: '0.9em', color: 'gray'}}>Mengedit Pelanggan ID: {currentCustomer.id}</p>}
+                <form onSubmit={handleFormSubmit}>
+                    <div style={{ marginBottom: '10px' }}>
+                        <label>Nama Lengkap: </label>
+                        <input type="text" name="fullName" value={currentCustomer.fullName} onChange={handleFormInputChange} required 
+                               style={{width: '100%', padding: '8px', boxSizing: 'border-box'}} />
+                    </div>
+                    <div style={{ marginBottom: '10px' }}>
+                        <label>Email: </label>
+                        <input type="email" name="email" value={currentCustomer.email} onChange={handleFormInputChange} required 
+                               style={{width: '100%', padding: '8px', boxSizing: 'border-box'}} />
+                    </div>
+                    <div style={{ marginBottom: '10px' }}>
+                        <label>No. Telepon: </label>
+                        <input type="text" name="phoneNumber" value={currentCustomer.phoneNumber} onChange={handleFormInputChange} 
+                               style={{width: '100%', padding: '8px', boxSizing: 'border-box'}} />
+                    </div>
+                    <div style={{ marginBottom: '10px' }}>
+                        <label>Alamat: </label>
+                        <input type="text" name="address" value={currentCustomer.address} onChange={handleFormInputChange} 
+                               style={{width: '100%', padding: '8px', boxSizing: 'border-box'}} />
+                    </div>
+                    <button type="submit" style={{ marginRight: '10px', padding: '10px 15px' }}>
+                        {isEditing ? 'Simpan Perubahan' : 'Tambah Pelanggan'}
+                    </button>
+                    {isEditing && (
+                        <button type="button" onClick={handleCancelEdit} style={{ padding: '10px 15px', backgroundColor: 'grey', color: 'white', border: 'none' }}>
+                            Batal
+                        </button>
+                    )}
+                </form>
+            </div>
 
             {/* Fitur Search */}
             <h2>Cari Pelanggan</h2>
-            <form onSubmit={handleSearch} style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+            <form onSubmit={handleSearch} style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <input 
                     type="text" 
                     placeholder="Masukkan kata kunci..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)} 
+                    style={{padding: '8px'}}
                 />
-                <select value={searchBy} onChange={(e) => setSearchBy(e.target.value)}>
+                <select value={searchBy} onChange={(e) => setSearchBy(e.target.value)} style={{padding: '8px'}}>
                     <option value="fullname">Nama</option>
                     <option value="email">Email</option>
                     <option value="phonenumber">Telepon</option>
                 </select>
-                <button type="submit">Cari</button>
-                <button type="button" onClick={() => { setSearchTerm(''); setSearchBy('fullname'); fetchCustomers(); }}>Reset</button>
+                <button type="submit" style={{padding: '8px 15px'}}>Cari</button>
+                <button type="button" onClick={() => { setSearchTerm(''); setSearchBy('fullname'); fetchCustomers(); }} style={{padding: '8px 15px'}}>Reset</button>
             </form>
 
             {/* Tabel Daftar Pelanggan */}
             <h2>Daftar Pelanggan</h2>
-            {customers.length === 0 && !loading && <p>Belum ada data pelanggan.</p>}
+            {loading && <p>Memuat ulang data...</p>} 
+            {!loading && customers.length === 0 && <p>Belum ada data pelanggan atau tidak ditemukan.</p>}
             {customers.length > 0 && (
-                <table border="1" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <table border="1" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Nama Lengkap</th>
-                            <th>Email</th>
-                            <th>No. Telepon</th>
-                            <th>Alamat</th>
-                            <th>Status Aktif</th>
-                            <th>Dibuat Pada</th>
-                            <th>Aksi</th>
+                            <th style={{padding: '8px'}}>ID</th>
+                            <th style={{padding: '8px'}}>Nama Lengkap</th>
+                            <th style={{padding: '8px'}}>Email</th>
+                            <th style={{padding: '8px'}}>No. Telepon</th>
+                            <th style={{padding: '8px'}}>Alamat</th>
+                            <th style={{padding: '8px'}}>Status Aktif</th>
+                            <th style={{padding: '8px'}}>Dibuat Pada</th>
+                            <th style={{padding: '8px'}}>Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         {customers.map(customer => (
                             <tr key={customer.id}>
-                                <td>{customer.id}</td>
-                                <td>{customer.fullName}</td>
-                                <td>{customer.email}</td>
-                                <td>{customer.phoneNumber}</td>
-                                <td>{customer.address}</td>
-                                <td>{customer.isActive ? 'Aktif' : 'Tidak Aktif'}</td>
-                                <td>{new Date(customer.createdAt).toLocaleString()}</td>
-                                <td>
-                                    {/* Tombol Edit akan butuh form dan state terpisah, mirip create */}
-                                    <button onClick={() => alert(`Edit customer ID: ${customer.id} (Fitur belum diimplementasikan)`)}>Edit</button>
-                                    <button onClick={() => handleDeleteCustomer(customer.id)} style={{ marginLeft: '5px', backgroundColor: 'salmon' }}>Delete</button>
+                                <td style={{padding: '8px', wordBreak: 'break-all'}}>{customer.id}</td>
+                                <td style={{padding: '8px'}}>{customer.fullName}</td>
+                                <td style={{padding: '8px'}}>{customer.email}</td>
+                                <td style={{padding: '8px'}}>{customer.phoneNumber}</td>
+                                <td style={{padding: '8px'}}>{customer.address}</td>
+                                <td style={{padding: '8px'}}>{customer.isActive ? 'Aktif' : 'Tidak Aktif'}</td>
+                                <td style={{padding: '8px'}}>{new Date(customer.createdAt).toLocaleString()}</td>
+                                <td style={{padding: '8px'}}>
+                                    <button onClick={() => handleEditClick(customer)} style={{ marginRight: '5px', padding: '5px 10px' }}>Edit</button>
+                                    <button onClick={() => handleDeleteCustomer(customer.id)} style={{ backgroundColor: 'salmon', color: 'white', border: 'none', padding: '5px 10px' }}>Delete</button>
                                 </td>
                             </tr>
                         ))}

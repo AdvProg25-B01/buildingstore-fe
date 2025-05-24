@@ -1,3 +1,5 @@
+import ProductListPage from "./pages/ProductListPage";
+
 // src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -10,6 +12,11 @@ import AdminDashboard   from './pages/AdminDashboard';
 import KasirDashboard   from './pages/KasirDashboard';
 import CreateUser       from './pages/CreateUser';
 import ProtectedRoute   from './components/ProtectedRoute';
+import ProductListPage from './pages/ProductListPage';
+import ProductCreatePage from './pages/ProductCreatePage';
+import ProductEditPage from './pages/ProductEditPage';
+import ProductByIdPage from './pages/ProductByIdPage';
+
 
 function App() {
   return (
@@ -20,7 +27,10 @@ function App() {
         <Route path="/"        element={<LandingPage />} />
         <Route path="/login"   element={<Login />} />
         <Route path="/register" element={<Register />} />
-
+        <Route path="/" element={<ProductListPage />} />
+        <Route path="/create" element={<ProductCreatePage />} />
+        <Route path="/edit/:name" element={<ProductEditPage />} />
+        <Route path="/findById" element={<ProductByIdPage />} />
         {/* Admin-only */}
         <Route
           path="/admin-dashboard"

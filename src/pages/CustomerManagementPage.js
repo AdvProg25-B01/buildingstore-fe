@@ -1,64 +1,96 @@
 // src/pages/CustomerManagementPage.js
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react'; // Tambahkan useRef
 import customerService from '../services/customerService';
-import Modal from '../components/Modal'; // Import Modal component
-import CustomerForm from '../components/CustomerForm'; // Import CustomerForm component
-import { PlusCircle, Edit3, Trash2 } from 'lucide-react'; // Icon untuk tombol (opsional, bisa ganti teks)
+import Modal from '../components/Modal';
+import CustomerForm from '../components/CustomerForm';
+import { PlusCircle, Edit3, Trash2, Search } from 'lucide-react'; // Tambah icon Search
+import { toast } from 'react-toastify'; // <-- Import toast
 
 function CustomerManagementPage() {
     const [customers, setCustomers] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState(null); // Error tetap bisa ditampilkan di halaman
 
     // State untuk Modal
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     
-    const [selectedCustomer, setSelectedCustomer] = useState(null); // Untuk edit dan delete
+    const [selectedCustomer, setSelectedCustomer] = useState(null);
 
-    // State untuk search (tetap)
+    // State untuk search
     const [searchTerm, setSearchTerm] = useState('');
     const [searchBy, setSearchBy] = useState('fullname');
+    const debounceTimeoutRef = useRef(null); // Untuk debounce search
 
-    // Fungsi untuk fetch data pelanggan (gunakan useCallback untuk optimasi jika diperlukan)
     const fetchCustomers = useCallback(async (term = '', by = '') => {
-        setLoading(true);
+        // Jika term kosong, set loading menjadi true hanya jika customers juga kosong
+        // Ini agar tidak ada flicker loading saat live search dengan term kosong
+        if (term || customers.length === 0) {
+            setLoading(true);
+        }
         try {
             const response = await customerService.getAllCustomers(term, by);
             setCustomers(response.data);
             setError(null);
         } catch (err) {
-            setError('Gagal memuat data pelanggan: ' + (err.response?.data?.message || err.message));
+            const errorMessage = err.response?.data?.message || err.message || 'Terjadi kesalahan';
+            setError('Gagal memuat data pelanggan: ' + errorMessage);
+            // toast.error('Gagal memuat data pelanggan: ' + errorMessage); // Bisa juga pakai toast untuk error fetch
             setCustomers([]);
         } finally {
             setLoading(false);
         }
-    }, []); // useCallback dependency array kosong, fetchCustomers tidak akan dibuat ulang kecuali komponen unmount/mount
+    }, [customers.length]); // Tambahkan customers.length sebagai dependency
 
     useEffect(() => {
-        fetchCustomers();
-    }, [fetchCustomers]); // Panggil fetchCustomers saat komponen mount atau jika referensi fetchCustomers berubah
+        fetchCustomers(searchTerm, searchBy);
+    }, [fetchCustomers]); // Panggil saat mount awal
+
+    // --- Live Search Logic ---
+    useEffect(() => {
+        // Hapus timeout sebelumnya jika ada
+        if (debounceTimeoutRef.current) {
+            clearTimeout(debounceTimeoutRef.current);
+        }
+
+        // Set timeout baru
+        // Hanya fetch jika searchTerm tidak kosong, ATAU jika searchTerm kosong tapi sebelumnya tidak kosong (untuk reset)
+        if (searchTerm.trim() !== '' || (searchTerm.trim() === '' && customers.length > 0 && !loading)) {
+            debounceTimeoutRef.current = setTimeout(() => {
+                fetchCustomers(searchTerm.trim(), searchBy);
+            }, 500); // Debounce 500ms
+        } else if (searchTerm.trim() === '' && !loading) {
+            // Jika searchTerm kosong dan tidak sedang loading, langsung fetch semua data (reset)
+             fetchCustomers('', searchBy);
+        }
+
+
+        // Cleanup timeout saat komponen unmount atau searchTerm/searchBy berubah
+        return () => {
+            if (debounceTimeoutRef.current) {
+                clearTimeout(debounceTimeoutRef.current);
+            }
+        };
+    }, [searchTerm, searchBy, fetchCustomers, customers.length, loading]);
+
 
     // --- Handler untuk Modal Tambah Pelanggan ---
     const handleOpenAddModal = () => {
-        setSelectedCustomer(null); // Pastikan tidak ada data lama
+        setSelectedCustomer(null);
         setIsAddModalOpen(true);
     };
-
-    const handleCloseAddModal = () => {
-        setIsAddModalOpen(false);
-    };
+    const handleCloseAddModal = () => setIsAddModalOpen(false);
 
     const handleAddCustomer = async (formData) => {
         try {
             await customerService.createCustomer(formData);
-            alert('Pelanggan berhasil ditambahkan!');
+            toast.success('Pelanggan berhasil ditambahkan!'); // Ganti alert
             handleCloseAddModal();
-            fetchCustomers(searchTerm, searchBy); // AJAX-like update
+            fetchCustomers(searchTerm, searchBy);
         } catch (err) {
-            alert('Gagal menambahkan pelanggan: ' + (err.response?.data?.message || err.message));
-            // Modal tetap terbuka agar pengguna bisa koreksi
+            const errorMessage = err.response?.data?.message || err.message || 'Terjadi kesalahan';
+            toast.error('Gagal menambahkan pelanggan: ' + errorMessage); // Ganti alert
         }
     };
 
@@ -67,7 +99,6 @@ function CustomerManagementPage() {
         setSelectedCustomer(customer);
         setIsEditModalOpen(true);
     };
-
     const handleCloseEditModal = () => {
         setIsEditModalOpen(false);
         setSelectedCustomer(null);
@@ -77,12 +108,12 @@ function CustomerManagementPage() {
         if (!selectedCustomer || !selectedCustomer.id) return;
         try {
             await customerService.updateCustomer(selectedCustomer.id, formData);
-            alert('Pelanggan berhasil diperbarui!');
+            toast.success('Pelanggan berhasil diperbarui!'); // Ganti alert
             handleCloseEditModal();
-            fetchCustomers(searchTerm, searchBy); // AJAX-like update
+            fetchCustomers(searchTerm, searchBy);
         } catch (err) {
-            alert('Gagal memperbarui pelanggan: ' + (err.response?.data?.message || err.message));
-            // Modal tetap terbuka
+            const errorMessage = err.response?.data?.message || err.message || 'Terjadi kesalahan';
+            toast.error('Gagal memperbarui pelanggan: ' + errorMessage); // Ganti alert
         }
     };
 
@@ -91,7 +122,6 @@ function CustomerManagementPage() {
         setSelectedCustomer(customer);
         setIsDeleteModalOpen(true);
     };
-
     const handleCloseDeleteModal = () => {
         setIsDeleteModalOpen(false);
         setSelectedCustomer(null);
@@ -101,21 +131,29 @@ function CustomerManagementPage() {
         if (!selectedCustomer || !selectedCustomer.id) return;
         try {
             await customerService.deleteCustomer(selectedCustomer.id);
-            alert('Pelanggan berhasil dihapus.');
+            toast.success('Pelanggan berhasil dihapus.'); // Ganti alert
             handleCloseDeleteModal();
-            fetchCustomers(searchTerm, searchBy); // AJAX-like update
-        } catch (err)
-        {
-            alert('Gagal menghapus pelanggan: ' + (err.response?.data?.message || err.message));
-            handleCloseDeleteModal(); // Tutup modal walau gagal
+            fetchCustomers(searchTerm, searchBy);
+        } catch (err) {
+            const errorMessage = err.response?.data?.message || err.message || 'Terjadi kesalahan';
+            toast.error('Gagal menghapus pelanggan: ' + errorMessage); // Ganti alert
+            handleCloseDeleteModal();
         }
     };
     
-    // Fungsi Search Customer (tetap)
-    const handleSearch = (e) => {
-        e.preventDefault();
-        fetchCustomers(searchTerm, searchBy);
+    // Fungsi Search Customer (sekarang otomatis) - Tombol submit bisa dihilangkan
+    // const handleSearch = (e) => {
+    //     e.preventDefault();
+    //     fetchCustomers(searchTerm, searchBy);
+    // };
+
+    // Fungsi untuk mereset search bar dan memuat semua pelanggan
+    const handleResetSearch = () => {
+        setSearchTerm('');
+        // setSearchBy('fullname'); // Opsional: reset juga searchBy jika diinginkan
+        // fetchCustomers('', searchBy); // fetchCustomers akan dipicu oleh useEffect karena searchTerm berubah
     };
+
 
     if (loading && customers.length === 0) return <p style={{ textAlign: 'center', marginTop: '20px' }}>Loading pelanggan...</p>;
 
@@ -142,32 +180,48 @@ function CustomerManagementPage() {
                 </button>
             </div>
 
-            {error && <p style={{ color: 'red', textAlign: 'center' }}>Error: {error}</p>}
+            {error && <p style={{ color: 'red', textAlign: 'center', marginBottom: '15px', padding: '10px', background: '#ffebee', border: '1px solid #ef9a9a', borderRadius: '4px' }}>{error}</p>}
 
-            {/* Fitur Search */}
-            <form onSubmit={handleSearch} style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center', padding: '15px', background: '#f8f9fa', borderRadius: '5px' }}>
-                <input 
-                    type="text" 
-                    placeholder="Cari berdasarkan..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)} 
-                    style={{padding: '10px', flexGrow: 1, border: '1px solid #ccc', borderRadius: '4px'}}
-                />
+            {/* Fitur Live Search */}
+            <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center', padding: '15px', background: '#f8f9fa', borderRadius: '5px' }}>
+                <div style={{ position: 'relative', flexGrow: 1 }}>
+                    <Search size={20} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#6c757d' }} />
+                    <input 
+                        type="text" 
+                        placeholder="Ketik untuk mencari..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)} 
+                        style={{padding: '10px 10px 10px 40px', width: '100%', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box'}}
+                    />
+                </div>
                 <select value={searchBy} onChange={(e) => setSearchBy(e.target.value)} style={{padding: '10px', border: '1px solid #ccc', borderRadius: '4px'}}>
                     <option value="fullname">Nama</option>
                     <option value="email">Email</option>
                     <option value="phonenumber">Telepon</option>
                 </select>
-                <button type="submit" style={{padding: '10px 15px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}}>Cari</button>
-                <button type="button" onClick={() => { setSearchTerm(''); setSearchBy('fullname'); fetchCustomers(); }} style={{padding: '10px 15px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}}>Reset</button>
-            </form>
+                {/* Tombol Cari dan Reset bisa dihilangkan karena search otomatis */}
+                {searchTerm && ( // Tampilkan tombol X untuk clear search term
+                    <button 
+                        type="button" 
+                        onClick={handleResetSearch} 
+                        title="Clear Search"
+                        style={{padding: '8px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', color: '#6c757d', fontSize: '1.2em' }}
+                    >
+                        × 
+                    </button>
+                )}
+            </div>
 
             {/* Tabel Daftar Pelanggan */}
-            {loading && <p style={{ textAlign: 'center' }}>Memuat ulang data...</p>} 
-            {!loading && customers.length === 0 && <p style={{ textAlign: 'center', padding: '20px', background: '#f8f9fa', borderRadius: '5px' }}>Belum ada data pelanggan atau tidak ditemukan.</p>}
+            {/* Kondisi loading di sini agar tidak hilang saat live search */}
+            {loading && customers.length > 0 && <p style={{ textAlign: 'center' }}>Memuat data...</p>} 
+            {!loading && customers.length === 0 && searchTerm && <p style={{ textAlign: 'center', padding: '20px', background: '#f8f9fa', borderRadius: '5px' }}>Pelanggan tidak ditemukan dengan kata kunci "{searchTerm}".</p>}
+            {!loading && customers.length === 0 && !searchTerm && <p style={{ textAlign: 'center', padding: '20px', background: '#f8f9fa', borderRadius: '5px' }}>Belum ada data pelanggan.</p>}
+            
             {customers.length > 0 && (
-                <div style={{ overflowX: 'auto' }}> {/* Untuk responsivitas tabel */}
+                <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                        {/* ... isi tabel tetap sama ... */}
                         <thead style={{backgroundColor: '#e9ecef'}}>
                             <tr>
                                 <th style={{padding: '12px 15px', borderBottom: '2px solid #dee2e6'}}>ID</th>

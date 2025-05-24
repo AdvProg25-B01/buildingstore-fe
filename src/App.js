@@ -10,6 +10,7 @@ import AdminDashboard   from './pages/AdminDashboard';
 import KasirDashboard   from './pages/KasirDashboard';
 import CreateUser       from './pages/CreateUser';
 import ProtectedRoute   from './components/ProtectedRoute';
+import SupplierManagementPage from './pages/SupplierManagementPage';
 
 function App() {
   return (
@@ -38,6 +39,15 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/suppliers"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <SupplierManagementPage />
+            </ProtectedRoute>
+          }
+        />
+
 
         {/* Kasir-only */}
         <Route

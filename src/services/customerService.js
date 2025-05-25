@@ -1,13 +1,14 @@
 // src/services/customerService.js
 import axios from 'axios';
 
-const API_URL = 'http://localhost:9090/api/customers';
+const API_CUSTOMER_URL = process.env.REACT_APP_CUSTOMER_API_URL || 'http://localhost:8082';
+const BASE_CUSTOMER_URL = `${API_CUSTOMER_URL}/api/customers`;
 
 // Fungsi untuk mendapatkan semua pelanggan atau search
 // GET /api/customers
 // GET /api/customers?searchTerm=...&searchBy=...
 const getAllCustomers = (searchTerm = '', searchBy = '') => {
-    let url = API_URL;
+    let url = BASE_CUSTOMER_URL;
     if (searchTerm && searchBy) {
         url += `?searchTerm=${encodeURIComponent(searchTerm)}&searchBy=${encodeURIComponent(searchBy)}`;
     }
@@ -17,7 +18,7 @@ const getAllCustomers = (searchTerm = '', searchBy = '') => {
 // Fungsi untuk mendapatkan pelanggan by ID
 // GET /api/customers/{id}
 const getCustomerById = (id) => {
-    return axios.get(`${API_URL}/${id}`);
+    return axios.get(`${BASE_CUSTOMER_URL}/${id}`);
 };
 
 // Fungsi untuk membuat pelanggan baru
@@ -25,20 +26,20 @@ const getCustomerById = (id) => {
 // Data yang dikirim harus sesuai CreateCustomerRequestDTO
 const createCustomer = (customerData) => {
     // customerData = { fullName: "...", phoneNumber: "...", email: "...", address: "..." }
-    return axios.post(API_URL, customerData);
+    return axios.post(BASE_CUSTOMER_URL, customerData);
 };
 
 // Fungsi untuk update pelanggan
 // PUT /api/customers/{id}
 // Data yang dikirim harus sesuai UpdateCustomerRequestDTO
 const updateCustomer = (id, customerData) => {
-    return axios.put(`${API_URL}/${id}`, customerData);
+    return axios.put(`${BASE_CUSTOMER_URL}/${id}`, customerData);
 };
 
 // Fungsi untuk menghapus pelanggan
 // DELETE /api/customers/{id}
 const deleteCustomer = (id) => {
-    return axios.delete(`${API_URL}/${id}`);
+    return axios.delete(`${BASE_CUSTOMER_URL}/${id}`);
 };
 
 // Export semua fungsi agar bisa dipakai di komponen lain

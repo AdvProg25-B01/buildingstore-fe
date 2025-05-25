@@ -55,6 +55,18 @@ const Navbar = () => {
                   </Link>
                 </li>
 
+                  <li>
+                    <Link to="/manage-customers" className="text-white hover:text-blue-200 transition duration-300">
+                      Manajemen Pelanggan
+                    </Link>
+                  </li>
+
+                <li>
+                  <Link to="/payment" className="text-white hover:text-blue-200 transition duration-300">
+                    Manajemen Pembayaran
+                  </Link>
+                </li>
+
                 <li>
                   <Link to="/product/list" className="text-white hover:text-blue-200 transition duration-300">
                     Manajemen Produk
@@ -98,7 +110,20 @@ const Navbar = () => {
                   </Link>
                 </li>
 
+                    <li>
+                    <Link to="/manage-customers" className="text-white hover:text-blue-200 transition duration-300">
+                      Manajemen Pelanggan
+                    </Link>
+                  </li>
+
                 <li>
+                  <Link to="/payment" className="text-white hover:text-blue-200 transition duration-300">
+                    Manajemen Pembayaran
+                  </Link>
+                </li>
+
+                <li>
+                  <button
                   <button 
                     onClick={handleLogout}
                     className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition duration-300"

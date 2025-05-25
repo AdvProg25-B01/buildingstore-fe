@@ -31,15 +31,13 @@ export const transactionService = {
         return handleResponse(response);
     },
 
-    getAllTransactions: async (params = {}) => {
+    getAllTransactions: async (params = {}) => { // Fungsi ini sudah ada
         const queryParams = new URLSearchParams(params);
-        const url = `${BASE_TRANSACTION_URL}${Object.keys(params).length ? `?${queryParams}` : ''}`;
-        const response = await fetch(url, {
-            headers: getAuthOnlyHeaders(),
-        });
+        // Jika params kosong, queryParams.toString() akan kosong, jadi url tetap benar
+        const url = `${BASE_TRANSACTION_URL}${queryParams.toString() ? `?${queryParams}` : ''}`;
+        const response = await fetch(url);
         return handleResponse(response);
     },
-
     getTransactionById: async (id) => {
         const response = await fetch(`${BASE_TRANSACTION_URL}/${id}`, {
             headers: getAuthOnlyHeaders(),
@@ -63,6 +61,7 @@ export const transactionService = {
         });
         return handleResponse(response);
     },
+    
 
     completeTransaction: async (id) => {
         const response = await fetch(`${BASE_TRANSACTION_URL}/${id}/complete`, {

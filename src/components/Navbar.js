@@ -91,9 +91,27 @@ const Navbar = () => {
                   </Link>
                 </li>
 
+                  <li>
+                    <Link to="/manage-customers" className="text-white hover:text-blue-200 transition duration-300">
+                      Manajemen Pelanggan
+                    </Link>
+                  </li>
+
+                <li>
+                  <Link to="/payment" className="text-white hover:text-blue-200 transition duration-300">
+                    Manajemen Pembayaran
+                  </Link>
+                </li>
+
                 <li>
                   <Link to="/product/list" className="text-white hover:text-blue-200 transition duration-300">
                     Produk
+                  </Link>
+                </li>
+                
+                <li>
+                  <Link to="/suppliers" className="text-white hover:text-blue-200 transition duration-300">
+                    Manajemen Supplier
                   </Link>
                 </li>
 
@@ -122,6 +140,18 @@ const Navbar = () => {
                 <li>
                   <Link to="/manajemen-transaksi" className="text-white hover:text-blue-200 transition duration-300">
                     Transaksi
+                  </Link>
+                </li>
+
+                    <li>
+                    <Link to="/manage-customers" className="text-white hover:text-blue-200 transition duration-300">
+                      Manajemen Pelanggan
+                    </Link>
+                  </li>
+
+                <li>
+                  <Link to="/payment" className="text-white hover:text-blue-200 transition duration-300">
+                    Manajemen Pembayaran
                   </Link>
                 </li>
 

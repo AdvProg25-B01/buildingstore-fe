@@ -1,7 +1,7 @@
 // src/services/customerService.js
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8081/api/customers';
+const API_URL = 'http://localhost:8082/api/customers';
 
 // Fungsi untuk mendapatkan semua pelanggan atau search
 // GET /api/customers

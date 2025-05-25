@@ -5,7 +5,7 @@ import { Store } from 'lucide-react';
 const Navbar = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role'); // Menggunakan 'role' sesuai kode Anda
+  const role = localStorage.getItem('role');
   
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -25,7 +25,6 @@ const Navbar = () => {
           </li>
           
           <div className="flex space-x-6 items-center">
-            {/* Link untuk pengguna yang belum login */}
             {!token && (
               <>
                 <li>
@@ -42,8 +41,7 @@ const Navbar = () => {
               </>
             )}
             
-            {/* Menu untuk pengguna yang sudah login */}
-            {token && (
+            {token && role === 'ADMIN' && (
               <>
                 <li>
                   <Link to="/admin-dashboard" className="text-white hover:text-blue-200 transition duration-300">
@@ -56,6 +54,12 @@ const Navbar = () => {
                     Manajemen Transaksi
                   </Link>
                 </li>
+
+                <li>
+                    <Link to="/manage-customers" className="text-white hover:text-blue-200 transition duration-300">
+                      Manajemen Pelanggan
+                    </Link>
+                  </li>
 
                 <li>
                   <Link to="/product/list" className="text-white hover:text-blue-200 transition duration-300">
@@ -93,6 +97,12 @@ const Navbar = () => {
                     Manajemen Transaksi
                   </Link>
                 </li>
+
+                <li>
+                    <Link to="/manage-customers" className="text-white hover:text-blue-200 transition duration-300">
+                      Manajemen Pelanggan
+                    </Link>
+                  </li>
 
                 <li>
                   <button 

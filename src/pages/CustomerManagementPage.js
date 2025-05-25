@@ -5,6 +5,8 @@ import Modal from '../components/Modal';
 import CustomerForm from '../components/CustomerForm';
 import { PlusCircle, Edit3, Trash2, Search, Eye, ChevronLeft, ChevronRight } from 'lucide-react'; // Added Eye, ChevronLeft, ChevronRight
 import { toast } from 'react-toastify';
+import { transactionService } from '../services/transactionService';
+import TransactionHistoryModal from '../components/TransactionHistoryModal'; // Import sudah ada
 
 // --- Color Palette ---
 const PRIMARY_COLOR = '#1E3A8A'; // Main web color
@@ -34,6 +36,13 @@ function CustomerManagementPage() {
     // --- Pagination State ---
     const [currentPage, setCurrentPage] = useState(1);
     const [customersPerPage] = useState(10);
+
+    // --- State Baru untuk Modal Histori Transaksi ---
+    const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+    const [selectedCustomerForHistory, setSelectedCustomerForHistory] = useState(null);
+    const [customerTransactions, setCustomerTransactions] = useState([]);
+    const [loadingHistory, setLoadingHistory] = useState(false);
+    const [historyError, setHistoryError] = useState(null);
 
     const fetchCustomers = useCallback(async (term = '', by = '') => {
         if (term || customers.length === 0) {
@@ -67,7 +76,7 @@ function CustomerManagementPage() {
                 fetchCustomers(searchTerm.trim(), searchBy);
             }, 500);
         } else if (searchTerm.trim() === '' && !loading && customers.length > 0) { // If search term is cleared
-             fetchCustomers('', searchBy);
+                fetchCustomers('', searchBy);
         }
         return () => {
             if (debounceTimeoutRef.current) {
@@ -140,17 +149,42 @@ function CustomerManagementPage() {
         }
     };
 
+    // --- Fungsi Baru untuk Fetch Histori Transaksi ---
+    const fetchCustomerHistory = async (customerId) => {
+        if (!customerId) return;
+        setLoadingHistory(true);
+        setHistoryError(null);
+        setCustomerTransactions([]); // Kosongkan transaksi sebelumnya
+        try {
+            const params = { customerId: customerId };
+            const response = await transactionService.getAllTransactions(params); // Menggunakan getAllTransactions dengan filter customerId
+            setCustomerTransactions(response); // Asumsi response adalah array transaksi
+        } catch (err) {
+            const errorMessage = err.message || 'Gagal memuat riwayat transaksi.';
+            setHistoryError(errorMessage);
+            toast.error(errorMessage);
+        } finally {
+            setLoadingHistory(false);
+        }
+    };
+
     const handleResetSearch = () => {
         setSearchTerm('');
         // fetchCustomers('', searchBy); // useEffect for searchTerm will trigger this
     };
 
-    // --- View History Handler (Placeholder) ---
+    // --- View History Handler ---
     const handleViewHistory = (customer) => {
-        toast.info(`Fitur "Lihat Riwayat" untuk ${customer.fullName} akan segera hadir!`);
-        // When BE is ready, you might open a new modal or navigate to a history page:
-        // setViewingHistoryFor(customer);
-        // setIsHistoryModalOpen(true);
+        setSelectedCustomerForHistory(customer); // Simpan customer yang dipilih
+        setIsHistoryModalOpen(true);
+        fetchCustomerHistory(customer.id); // Panggil fetch history dengan ID customer
+    };
+
+    const handleCloseHistoryModal = () => {
+        setIsHistoryModalOpen(false);
+        setSelectedCustomerForHistory(null);
+        setCustomerTransactions([]);
+        setHistoryError(null);
     };
 
     // --- Pagination Logic ---
@@ -404,6 +438,18 @@ function CustomerManagementPage() {
                     </div>
                 )}
             </Modal>
+
+            {/* --- Modal Baru untuk Histori Transaksi --- */}
+            {selectedCustomerForHistory && ( // Hanya render jika ada customer yang dipilih
+                <TransactionHistoryModal
+                    isOpen={isHistoryModalOpen}
+                    onClose={handleCloseHistoryModal}
+                    customer={selectedCustomerForHistory}
+                    transactions={customerTransactions}
+                    loading={loadingHistory}
+                    error={historyError}
+                />
+            )}
         </div>
     );
 }

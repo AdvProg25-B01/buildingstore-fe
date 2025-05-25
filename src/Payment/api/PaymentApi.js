@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_PRODUCT_URL = process.env.REACT_APP_API_TRANSACTION_URL || 'http://localhost:8081';
+const API_PRODUCT_URL = process.env.REACT_APP_API_PRODUCT_URL || 'http://localhost:8081';
 
 export const createPayment = async (payment) => {
     try {

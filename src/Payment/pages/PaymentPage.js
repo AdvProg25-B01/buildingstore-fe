@@ -9,12 +9,9 @@ function PaymentPage() {
         navigate('/payment/create');
     };
 
-    const handleUpdatePayment = () => {
-        console.log("Tombol 'Perbarui Status Pembayaran' diklik.");
-    };
-
     const handleViewHistory = () => {
         console.log("Tombol 'Lihat Riwayat Pembayaran' diklik.");
+        navigate('/payment/history')
     };
 
     const primaryDark = '#201E43';
@@ -104,18 +101,6 @@ function PaymentPage() {
                         })}
                     >
                         Buat Pembayaran Baru
-                    </button>
-                    <button
-                        onClick={handleUpdatePayment}
-                        style={{ ...baseButtonStyle }}
-                        onMouseEnter={(e) => Object.assign(e.target.style, hoverButtonProperties)}
-                        onMouseLeave={(e) => Object.assign(e.target.style, {
-                            backgroundColor: baseButtonStyle.backgroundColor,
-                            transform: baseButtonStyle.transform,
-                            boxShadow: baseButtonStyle.boxShadow
-                        })}
-                    >
-                        Perbarui Status Pembayaran
                     </button>
                     <button
                         onClick={handleViewHistory}

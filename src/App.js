@@ -12,6 +12,8 @@ import CreateUser       from './pages/CreateUser';
 import ProtectedRoute   from './components/ProtectedRoute';
 import PaymentPage      from './Payment/pages/PaymentPage'
 import CreatePaymentPage from "./Payment/pages/CreatePaymentPage";
+import UpdatePaymentStatusPage from "./Payment/pages/UpdatePaymentStatusPage";
+import PaymentHistoryPage from "./Payment/pages/PaymentHistoryPage";
 
 function App() {
   return (
@@ -64,6 +66,24 @@ function App() {
               element={
                   <ProtectedRoute allowedRoles={['KASIR', 'ADMIN']}>
                       <CreatePaymentPage />
+                  </ProtectedRoute>
+              }
+          />
+
+          <Route
+              path="/payment/update/:paymentId"
+              element={
+                  <ProtectedRoute allowedRoles={['KASIR', 'ADMIN']}>
+                      <UpdatePaymentStatusPage />
+                  </ProtectedRoute>
+              }
+          />
+
+          <Route
+              path="/payment/history"
+              element={
+                  <ProtectedRoute allowedRoles={['KASIR', 'ADMIN']}>
+                      <PaymentHistoryPage />
                   </ProtectedRoute>
               }
           />

@@ -259,8 +259,6 @@ function CustomerManagementPage() {
                                     <th style={{padding: '12px 15px'}}>Email</th>
                                     <th style={{padding: '12px 15px'}}>No. Telepon</th>
                                     <th style={{padding: '12px 15px'}}>Alamat</th>
-                                    <th style={{padding: '12px 15px', textAlign: 'right'}}>Total Transaksi</th>
-                                    <th style={{padding: '12px 15px', textAlign: 'right'}}>Total Belanja (Rp)</th>
                                     <th style={{padding: '12px 15px', textAlign: 'center'}}>Aksi</th>
                                 </tr>
                             </thead>
@@ -271,12 +269,7 @@ function CustomerManagementPage() {
                                         <td style={{padding: '12px 15px', color: TEXT_COLOR_DARK}}>{customer.email}</td>
                                         <td style={{padding: '12px 15px', color: TEXT_COLOR_DARK}}>{customer.phoneNumber || '-'}</td>
                                         <td style={{padding: '12px 15px', color: TEXT_COLOR_DARK, maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={customer.address}>{customer.address || '-'}</td>
-                                        <td style={{padding: '12px 15px', color: TEXT_COLOR_DARK, textAlign: 'right'}}>
-                                            {customer.totalTransactions || 0} {/* Placeholder */}
-                                        </td>
-                                        <td style={{padding: '12px 15px', color: TEXT_COLOR_DARK, textAlign: 'right'}}>
-                                            {new Intl.NumberFormat('id-ID').format(customer.totalShoppingAmount || 0)} {/* Placeholder */}
-                                        </td>
+                                        
                                         <td style={{padding: '10px 15px', display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center'}}>
                                             <button 
                                                 onClick={() => handleViewHistory(customer)} 

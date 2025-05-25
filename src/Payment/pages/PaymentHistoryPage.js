@@ -1,20 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getPaymentsByCustomerId as getPaymentsByCustomerIdApi } from '../api/PaymentApi';
+import {
+    getPaymentsByCustomerId as getPaymentsByCustomerIdApi,
+    deletePayment as deletePaymentApi
+} from '../api/PaymentApi';
 import customerService from '../../services/customerService';
 
 function PaymentHistoryPage() {
     const navigate = useNavigate();
 
+    const [currentUserRole, setCurrentUserRole] = useState(null);
+
+    useEffect(() => {
+        const roleFromStorage = localStorage.getItem('role');
+        console.log("Role from localStorage (key: 'role'):", roleFromStorage);
+
+        if (roleFromStorage) {
+            setCurrentUserRole(roleFromStorage);
+            console.log("Setting currentUserRole to:", roleFromStorage);
+        } else {
+            console.warn("Role (key: 'role') tidak ditemukan di localStorage.");
+            setCurrentUserRole(null);
+        }
+    }, []);
+
     const [customers, setCustomers] = useState([]);
     const [selectedCustomerId, setSelectedCustomerId] = useState('');
-
     const [payments, setPayments] = useState([]);
 
     const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
     const [fetchCustomersError, setFetchCustomersError] = useState(null);
     const [isLoadingPayments, setIsLoadingPayments] = useState(false);
     const [fetchPaymentsError, setFetchPaymentsError] = useState(null);
+
+    const [isDeletingId, setIsDeletingId] = useState(null);
+    const [deleteError, setDeleteError] = useState(null);
 
     useEffect(() => {
         const fetchAllCustomers = async () => {
@@ -40,31 +60,31 @@ function PaymentHistoryPage() {
         fetchAllCustomers();
     }, []);
 
-    useEffect(() => {
-        const fetchCustomerPayments = async () => {
-            if (!selectedCustomerId) {
-                setPayments([]);
-                return;
-            }
-
-            setIsLoadingPayments(true);
-            setFetchPaymentsError(null);
+    const fetchCustomerPayments = useCallback(async () => {
+        if (!selectedCustomerId) {
             setPayments([]);
-            try {
-                const customerPayments = await getPaymentsByCustomerIdApi(selectedCustomerId);
-                setPayments(customerPayments || []);
-            } catch (error) {
-                console.error(`Gagal mengambil pembayaran untuk pelanggan ID ${selectedCustomerId}:`, error);
-                const errorMessage = error.response?.data?.message || error.message || "Gagal memuat riwayat pembayaran.";
-                setFetchPaymentsError(errorMessage);
-                setPayments([]);
-            } finally {
-                setIsLoadingPayments(false);
-            }
-        };
+            setFetchPaymentsError(null);
+            return;
+        }
 
-        fetchCustomerPayments();
+        setIsLoadingPayments(true);
+        setFetchPaymentsError(null);
+        try {
+            const customerPaymentsData = await getPaymentsByCustomerIdApi(selectedCustomerId);
+            setPayments(customerPaymentsData || []);
+        } catch (error) {
+            console.error(`Gagal mengambil pembayaran untuk pelanggan ID ${selectedCustomerId}:`, error);
+            const errorMessage = error.response?.data?.message || error.message || "Gagal memuat riwayat pembayaran.";
+            setFetchPaymentsError(errorMessage);
+            setPayments([]);
+        } finally {
+            setIsLoadingPayments(false);
+        }
     }, [selectedCustomerId]);
+
+    useEffect(() => {
+        fetchCustomerPayments();
+    }, [fetchCustomerPayments]);
 
     const handleCustomerChange = (event) => {
         setSelectedCustomerId(event.target.value);
@@ -72,6 +92,27 @@ function PaymentHistoryPage() {
 
     const handleUpdateStatus = (paymentId) => {
         navigate(`/payment/update/${paymentId}`);
+    };
+
+    const handleDeletePayment = async (paymentIdToDelete) => {
+        if (!window.confirm(`Apakah Anda yakin ingin menghapus pembayaran dengan ID: ${paymentIdToDelete}? Tindakan ini tidak dapat diurungkan.`)) {
+            return;
+        }
+
+        setIsDeletingId(paymentIdToDelete);
+        setDeleteError(null);
+        try {
+            await deletePaymentApi(paymentIdToDelete);
+            alert('Pembayaran berhasil dihapus.');
+            fetchCustomerPayments();
+        } catch (error) {
+            console.error(`Gagal menghapus pembayaran ID ${paymentIdToDelete}:`, error);
+            const errorMessage = error.response?.data?.message || error.message || "Gagal menghapus pembayaran.";
+            setDeleteError(errorMessage);
+            alert(`Error: ${errorMessage}`);
+        } finally {
+            setIsDeletingId(null);
+        }
     };
 
     const primaryDark = '#201E43';
@@ -82,7 +123,8 @@ function PaymentHistoryPage() {
     const inputBackgroundColor = '#2a2c52';
     const inputBorderColor = '#508C9B';
     const errorColor = '#E74C3C';
-    const tableHeaderBg = '#2c3e50';
+    const deleteButtonColor = '#c0392b';
+    const deleteButtonHoverColor = '#a93226';
 
     const containerStyle = {
         padding: '40px 20px',
@@ -109,7 +151,7 @@ function PaymentHistoryPage() {
         flexDirection: 'column',
         alignItems: 'center',
         width: '100%',
-        maxWidth: '900px',
+        maxWidth: '1000px',
     };
 
     const selectionContainerStyle = {
@@ -158,19 +200,21 @@ function PaymentHistoryPage() {
     };
 
     const thStyle = {
-        backgroundColor: tableHeaderBg,
+        backgroundColor: '#2c3e50',
         color: textColor,
         padding: '12px 15px',
         textAlign: 'left',
         borderBottom: `2px solid ${secondaryLight}`,
         fontSize: '0.95em',
         textTransform: 'uppercase',
+        whiteSpace: 'nowrap',
     };
 
     const tdStyle = {
         padding: '10px 15px',
         borderBottom: `1px solid ${secondaryDark}`,
         fontSize: '0.9em',
+        whiteSpace: 'nowrap',
     };
 
     const actionButtonStyle = {
@@ -181,10 +225,19 @@ function PaymentHistoryPage() {
         border: 'none',
         borderRadius: '5px',
         cursor: 'pointer',
-        transition: 'background-color 0.3s ease',
+        transition: 'background-color 0.2s ease, opacity 0.2s ease',
+        marginRight: '5px',
     };
     const hoverActionButtonStyle = {
         backgroundColor: '#3E7C8B',
+    };
+
+    const deleteBtnStyle = {
+        ...actionButtonStyle,
+        backgroundColor: deleteButtonColor,
+    };
+    const hoverDeleteBtnStyle = {
+        backgroundColor: deleteButtonHoverColor,
     };
 
     const backButtonStyle = {
@@ -218,6 +271,8 @@ function PaymentHistoryPage() {
         padding: '10px',
         borderRadius: '5px',
         border: `1px solid ${errorColor}`,
+        textAlign: 'left',
+        display: 'inline-block',
     };
 
     return (
@@ -232,13 +287,14 @@ function PaymentHistoryPage() {
                     {isLoadingCustomers ? (
                         <p style={messageTextStyle}>Memuat daftar pelanggan...</p>
                     ) : fetchCustomersError ? (
-                        <p style={errorTextStyle}>{fetchCustomersError}</p>
+                        <div style={errorTextStyle}>{fetchCustomersError}</div>
                     ) : (
                         <select
                             id="customer-select"
                             value={selectedCustomerId}
                             onChange={handleCustomerChange}
                             style={selectStyle}
+                            disabled={isLoadingPayments || !!isDeletingId}
                         >
                             <option value="" disabled>-- Pilih seorang pelanggan --</option>
                             {customers.map((customer) => (
@@ -250,11 +306,13 @@ function PaymentHistoryPage() {
                     )}
                 </div>
 
+                {deleteError && <div style={{...errorTextStyle, marginBottom: '15px'}}>{deleteError}</div>}
+
                 {selectedCustomerId && (
                     isLoadingPayments ? (
                         <p style={messageTextStyle}>Memuat riwayat pembayaran...</p>
                     ) : fetchPaymentsError ? (
-                        <p style={errorTextStyle}>{fetchPaymentsError}</p>
+                        <div style={errorTextStyle}>{fetchPaymentsError}</div>
                     ) : payments.length > 0 ? (
                         <div style={tableContainerStyle}>
                             <table style={tableStyle}>
@@ -280,18 +338,33 @@ function PaymentHistoryPage() {
                                         <td style={tdStyle}>
                                             {payment.createdAt ? new Date(payment.createdAt).toLocaleDateString('id-ID', {
                                                 year: 'numeric', month: 'long', day: 'numeric',
-                                                hour: '2-digit', minute: '2-digit'
+                                                hour: '2-digit', minute: '2-digit', hour12: false
                                             }) : 'N/A'}
                                         </td>
-                                        <td style={tdStyle}>
+                                        <td style={{...tdStyle, whiteSpace: 'nowrap'}}>
                                             <button
                                                 onClick={() => handleUpdateStatus(payment.id)}
                                                 style={actionButtonStyle}
-                                                onMouseEnter={(e) => Object.assign(e.target.style, hoverActionButtonStyle)}
-                                                onMouseLeave={(e) => Object.assign(e.target.style, {backgroundColor: actionButtonStyle.backgroundColor})}
+                                                disabled={!!isDeletingId}
+                                                onMouseEnter={(e) => {if(!isDeletingId) Object.assign(e.target.style, hoverActionButtonStyle)}}
+                                                onMouseLeave={(e) => {if(!isDeletingId) Object.assign(e.target.style, {backgroundColor: actionButtonStyle.backgroundColor})}}
                                             >
-                                                Update Status
+                                                Update
                                             </button>
+                                            {currentUserRole === 'ADMIN' && (
+                                                <button
+                                                    onClick={() => handleDeletePayment(payment.id)}
+                                                    style={{
+                                                        ...deleteBtnStyle,
+                                                        opacity: isDeletingId === payment.id ? 0.7 : 1
+                                                    }}
+                                                    disabled={isDeletingId === payment.id || (!!isDeletingId && isDeletingId !== payment.id)}
+                                                    onMouseEnter={(e) => {if(!(isDeletingId === payment.id || (!!isDeletingId && isDeletingId !== payment.id))) Object.assign(e.target.style, hoverDeleteBtnStyle)}}
+                                                    onMouseLeave={(e) => {if(!(isDeletingId === payment.id || (!!isDeletingId && isDeletingId !== payment.id))) Object.assign(e.target.style, {backgroundColor: deleteBtnStyle.backgroundColor})}}
+                                                >
+                                                    {isDeletingId === payment.id ? 'Menghapus...' : 'Hapus'}
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

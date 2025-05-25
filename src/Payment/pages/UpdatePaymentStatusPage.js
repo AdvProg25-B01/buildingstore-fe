@@ -222,7 +222,7 @@ function UpdatePaymentStatusPage() {
             <div style={containerStyle}>
                 <p style={errorTextStyle}>{fetchError}</p>
                 <button
-                    onClick={() => navigate('/pembayaran')}
+                    onClick={() => navigate('/payment')}
                     style={backButtonStyle}
                     onMouseEnter={(e) => Object.assign(e.target.style, hoverBackButtonStyle)}
                     onMouseLeave={(e) => Object.assign(e.target.style, {
@@ -296,7 +296,7 @@ function UpdatePaymentStatusPage() {
                 </div>
 
                 <button
-                    onClick={() => navigate('/pembayaran')}
+                    onClick={() => navigate('/payment')}
                     style={backButtonStyle}
                     disabled={isUpdating}
                     onMouseEnter={(e) => { if (!isUpdating) Object.assign(e.target.style, hoverBackButtonStyle);}}

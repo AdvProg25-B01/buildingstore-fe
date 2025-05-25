@@ -1,6 +1,15 @@
 const API_PRODUCT_URL = process.env.REACT_APP_API_TRANSACTION_URL || 'http://localhost:8081';
 const BASE_TRANSACTION_URL = `${API_PRODUCT_URL}/api/transactions`;
 
+const getAuthHeaders = () => ({
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${localStorage.getItem('token')}`,
+});
+
+const getAuthOnlyHeaders = () => ({
+    Authorization: `Bearer ${localStorage.getItem('token')}`,
+});
+
 const handleResponse = async (response) => {
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: response.statusText }));
@@ -16,9 +25,7 @@ export const transactionService = {
     createTransaction: async (transactionRequestDTO) => {
         const response = await fetch(BASE_TRANSACTION_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: getAuthHeaders(),
             body: JSON.stringify(transactionRequestDTO),
         });
         return handleResponse(response);
@@ -27,21 +34,23 @@ export const transactionService = {
     getAllTransactions: async (params = {}) => {
         const queryParams = new URLSearchParams(params);
         const url = `${BASE_TRANSACTION_URL}${Object.keys(params).length ? `?${queryParams}` : ''}`;
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            headers: getAuthOnlyHeaders(),
+        });
         return handleResponse(response);
     },
 
     getTransactionById: async (id) => {
-        const response = await fetch(`${BASE_TRANSACTION_URL}/${id}`);
+        const response = await fetch(`${BASE_TRANSACTION_URL}/${id}`, {
+            headers: getAuthOnlyHeaders(),
+        });
         return handleResponse(response);
     },
 
     updateTransaction: async (id, transactionUpdateDTO) => {
         const response = await fetch(`${BASE_TRANSACTION_URL}/${id}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: getAuthHeaders(),
             body: JSON.stringify(transactionUpdateDTO),
         });
         return handleResponse(response);
@@ -50,6 +59,7 @@ export const transactionService = {
     cancelTransaction: async (id) => {
         const response = await fetch(`${BASE_TRANSACTION_URL}/${id}/cancel`, {
             method: 'PATCH',
+            headers: getAuthOnlyHeaders(),
         });
         return handleResponse(response);
     },
@@ -57,18 +67,22 @@ export const transactionService = {
     completeTransaction: async (id) => {
         const response = await fetch(`${BASE_TRANSACTION_URL}/${id}/complete`, {
             method: 'PATCH',
+            headers: getAuthOnlyHeaders(),
         });
         return handleResponse(response);
     },
 
     getOngoingTransactions: async () => {
-        const response = await fetch(`${BASE_TRANSACTION_URL}/ongoing`);
+        const response = await fetch(`${BASE_TRANSACTION_URL}/ongoing`, {
+            headers: getAuthOnlyHeaders(),
+        });
         return handleResponse(response);
     },
 
     deleteTransaction: async (id) => {
         const response = await fetch(`${BASE_TRANSACTION_URL}/${id}`, {
-        method: 'DELETE',
+            method: 'DELETE',
+            headers: getAuthOnlyHeaders(),
         });
         return handleResponse(response);
     }

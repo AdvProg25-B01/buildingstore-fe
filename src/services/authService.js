@@ -45,10 +45,32 @@ const refreshToken = (refreshToken) => {
     });
 };
 
+const getProfile = (token) => {
+    return axios.get(API_URL + 'profile', {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+};
+
+const changePassword = (email, oldPassword, newPassword, token) => {
+    return axios.put(API_URL + 'change-password', {
+        email,
+        oldPassword,
+        newPassword
+    }, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+};
+
 export default {
     register,
     login,
     createUser,
     logout,
-    refreshToken
+    refreshToken,
+    getProfile,
+    changePassword
 };

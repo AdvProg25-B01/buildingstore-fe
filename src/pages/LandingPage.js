@@ -154,7 +154,11 @@ const LandingPage = () => {
             
             <div className="bg-blue-800 rounded-lg p-8 shadow-xl text-white">
               <div className="flex items-center justify-center mb-6">
-                <Store size={64} className="text-blue-300" />
+                <img
+                  src={require('../assets/logo/BuildingStore-StrokePutih.png')}
+                  alt="Logo"
+                  className="w-60 h-auto"
+                />
               </div>
               <h3 className="text-2xl font-bold mb-4 text-center">Building Store POS</h3>
               <p className="mb-6 text-center">Join hundreds of building supply stores already using our system to streamline operations and boost sales.</p>

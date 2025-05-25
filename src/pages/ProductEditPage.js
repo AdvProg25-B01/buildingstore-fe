@@ -1,223 +1,191 @@
-import React, { useEffect, useState } from 'react';
-import { getProductByName, updateProduct } from '../services/ProductApi';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Edit, Package, ArrowLeft, Save, AlertCircle } from 'lucide-react';
+import { getProductByName, updateProduct } from '../services/ProductApi';
+import SupplierAssignment from '../components/SupplierAssignment';
 
 const ProductEditPage = () => {
-    // Rename 'name' from useParams to avoid confusion with product.name
-    const { name: originalProductNameFromUrl } = useParams();
-    const navigate = useNavigate();
-    const [product, setProduct] = useState(null);
-    const [productId, setProductId] = useState(null); // <-- NEW STATE FOR PRODUCT ID
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
+  const { name } = useParams();
+  const navigate = useNavigate();
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [form, setForm] = useState({
+    name: '',
+    category: '',
+    stock: 0,
+    price: 0,
+  });
+  const [updateMessage, setUpdateMessage] = useState(null);
 
-    useEffect(() => {
-        // Fetch product by its original name from the URL
-        getProductByName(originalProductNameFromUrl)
-            .then((res) => {
-                setProduct(res.data);
-                setProductId(res.data.id); // <-- Store the actual product ID from the response
-                setLoading(false);
-            })
-            .catch(() => {
-                setError("Product not found");
-                setLoading(false);
-            });
-    }, [originalProductNameFromUrl]); // Re-run effect if URL name changes
-
-    const handleChange = (e) => {
-        setProduct({
-            ...product,
-            [e.target.name]: e.target.value
-        });
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setSaving(true);
-        setError(''); // Clear any previous error messages
-
-        if (!productId) { // Safety check: ensure we have an ID to update
-            setError("Product ID is missing. Cannot update.");
-            setSaving(false);
-            return;
-        }
-
+  useEffect(() => {
+    const fetchProduct = async () => {
         try {
-            // Call updateProduct with the immutable productId, and the full product object (which now contains the potentially new name)
-            await updateProduct(productId, product);
-            navigate('/product/list'); // Redirect to home/list page on success
-        } catch (err) {
-            console.error("Update failed:", err.response?.data || err.message); // Log full error
-            setError(err.response?.data?.message || "Update failed. Please try again.");
-        } finally {
-            setSaving(false);
-        }
+        const response = await getProductByName(name);
+        const productData = response.data;
+        
+        setProduct(productData);
+        setForm({
+            id: productData.id,  // Include the ID from the response
+            name: productData.name || '',
+            category: productData.category || '',
+            stock: productData.stock || 0,
+            price: productData.price || 0,
+        });
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching product:', err);
+        setError('Failed to load product details. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const handleGoBack = () => {
-        navigate('/');
-    };
+    if (name) {
+      fetchProduct();
+    }
+  }, [name]);
 
-    // ... rest of your JSX remains largely the same ...
-    // Your current JSX already uses `product.name`, `product.category`, etc.,
-    // which are correctly updated by `handleChange`
-    // The loading/error/main form structure is fine.
-    // Make sure the input for name still uses `name="name"` and `value={product.name}`
-    // which it already does.
+  const handleChange = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    });
+  };
 
-    return (
-        <div className="flex flex-col min-h-screen bg-blue-50">
-            {/* Header Section */}
-            <div className="bg-gradient-to-r from-blue-700 to-blue-900 text-white py-8">
-                <div className="container mx-auto px-4">
-                    <div className="flex items-center mb-4">
-                        <button
-                            onClick={handleGoBack}
-                            className="flex items-center text-blue-100 hover:text-white transition-colors duration-200 mr-4"
-                        >
-                            <ArrowLeft size={20} className="mr-1" />
-                            Back to Products
-                        </button>
-                    </div>
-                    <div className="flex items-center">
-                        <div className="bg-blue-600 rounded-full p-3 mr-4">
-                            <Edit className="text-white" size={32} />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl md:text-4xl font-bold">Edit Product</h1>
-                            <p className="text-blue-100 mt-2">Update product information</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      await updateProduct(name, form);
+      setUpdateMessage({ type: 'success', text: 'Product updated successfully!' });
+      // Refresh product data
+      const response = await getProductByName(form.name);
+      setProduct(response.data);
+    } catch (err) {
+      console.error('Error updating product:', err);
+      setUpdateMessage({ type: 'error', text: 'Failed to update product. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
 
-            {/* Main Content */}
-            <div className="flex-1 py-8">
-                <div className="container mx-auto px-4">
-                    <div className="max-w-4xl mx-auto">
-                        <div className="bg-white rounded-lg shadow-lg p-8">
-                            <div className="flex items-center mb-6">
-                                <div className="bg-blue-100 rounded-full p-3 mr-4">
-                                    <Package className="text-blue-700" size={24} />
-                                </div>
-                                <div>
-                                    <h2 className="text-2xl font-semibold text-blue-900">Product Information</h2>
-                                    <p className="text-gray-600 mt-1">Update the product details below</p>
-                                </div>
-                            </div>
+    // Clear message after 3 seconds
+    setTimeout(() => {
+      setUpdateMessage(null);
+    }, 3000);
+  };
 
-                            {/* Render form only if product data is available */}
-                            {product && (
-                                <form onSubmit={handleSubmit} className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label className="block text-sm font-semibold text-blue-900 mb-2">
-                                                Product Name
-                                            </label>
-                                            <input
-                                                type="text"
-                                                name="name"
-                                                value={product.name} // This will reflect new name from state
-                                                onChange={handleChange}
-                                                placeholder="Enter product name"
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                required
-                                            />
-                                        </div>
+  const handleProductUpdate = async () => {
+    // Refresh product data after supplier assignment changes
+    try {
+      const response = await getProductByName(name);
+      setProduct(response.data);
+    } catch (err) {
+      console.error('Error refreshing product data:', err);
+    }
+  };
 
-                                        <div>
-                                            <label className="block text-sm font-semibold text-blue-900 mb-2">
-                                                Category
-                                            </label>
-                                            <input
-                                                type="text"
-                                                name="category"
-                                                value={product.category}
-                                                onChange={handleChange}
-                                                placeholder="Enter product category"
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                required
-                                            />
-                                        </div>
+  if (loading && !product) {
+    return <div className="container mx-auto px-4 py-8">Loading product details...</div>;
+  }
 
-                                        <div>
-                                            <label className="block text-sm font-semibold text-blue-900 mb-2">
-                                                Stock Quantity
-                                            </label>
-                                            <input
-                                                type="number"
-                                                name="stock"
-                                                value={product.stock}
-                                                onChange={handleChange}
-                                                placeholder="Enter stock quantity"
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                min="0"
-                                                required
-                                            />
-                                        </div>
+  if (error && !product) {
+    return <div className="container mx-auto px-4 py-8 text-red-600">{error}</div>;
+  }
 
-                                        <div>
-                                            <label className="block text-sm font-semibold text-blue-900 mb-2">
-                                                Price ($)
-                                            </label>
-                                            <input
-                                                type="number"
-                                                name="price"
-                                                value={product.price}
-                                                onChange={handleChange}
-                                                placeholder="Enter product price"
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                step="0.01"
-                                                min="0"
-                                                required
-                                            />
-                                        </div>
-                                    </div>
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="bg-white p-6 rounded-lg shadow-lg">
+        <h1 className="text-2xl font-bold mb-6">Edit Product</h1>
 
-                                    {/* Error Message */}
-                                    {error && (
-                                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center">
-                                            <AlertCircle className="text-red-500 mr-3" size={20} />
-                                            <span className="text-red-700">{error}</span>
-                                        </div>
-                                    )}
+        {updateMessage && (
+          <div className={`mb-4 p-3 rounded-md ${
+            updateMessage.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+          }`}>
+            {updateMessage.text}
+          </div>
+        )}
 
-                                    {/* Submit Button */}
-                                    <div className="flex justify-end space-x-4">
-                                        <button
-                                            type="button"
-                                            onClick={handleGoBack}
-                                            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-300"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            disabled={saving}
-                                            className="bg-blue-700 hover:bg-blue-800 text-white font-semibold px-6 py-3 rounded-lg transition duration-300 flex items-center disabled:opacity-50"
-                                        >
-                                            <Save size={20} className="mr-2" />
-                                            {saving ? 'Updating...' : 'Update Product'}
-                                        </button>
-                                    </div>
-                                </form>
-                            )}
-                            {/* If product is null but not loading, show error */}
-                            {!product && !loading && error && (
-                                <div className="bg-red-50 border border-red-200 rounded-lg p-6 flex items-center justify-center">
-                                    <AlertCircle className="text-red-500 mr-3" size={24} />
-                                    <span className="text-red-700 text-lg">{error}</span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700">Category</label>
+            <input
+              type="text"
+              id="category"
+              name="category"
+              value={form.category}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="stock" className="block text-sm font-medium text-gray-700">Stock</label>
+            <input
+              type="number"
+              id="stock"
+              name="stock"
+              value={form.stock}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="price" className="block text-sm font-medium text-gray-700">Price</label>
+            <input
+              type="number"
+              id="price"
+              name="price"
+              value={form.price}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
+          </div>
+
+          <div className="flex justify-between">
+            <button
+              type="button"
+              onClick={() => navigate('/product/list')}
+              className="px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className={`px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                loading ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              {loading ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+
+        {/* Supplier Assignment Section */}
+        {product && (
+          <SupplierAssignment product={product} onUpdate={handleProductUpdate} />
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default ProductEditPage;

@@ -72,6 +72,12 @@ const Navbar = () => {
                     Manajemen Produk
                   </Link>
                 </li>
+                
+                <li>
+                  <Link to="/suppliers" className="text-white hover:text-blue-200 transition duration-300">
+                    Manajemen Supplier
+                  </Link>
+                </li>
 
                 <li>
                   <Link to="/create-user" className="text-white hover:text-blue-200 transition duration-300">

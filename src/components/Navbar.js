@@ -56,6 +56,12 @@ const Navbar = () => {
                 </li>
 
                 <li>
+                  <Link to="/payment" className="text-white hover:text-blue-200 transition duration-300">
+                    Manajemen Pembayaran
+                  </Link>
+                </li>
+
+                <li>
                   <Link to="/product/list" className="text-white hover:text-blue-200 transition duration-300">
                     Manajemen Produk
                   </Link>
@@ -89,6 +95,12 @@ const Navbar = () => {
                 <li>
                   <Link to="/manajemen-transaksi" className="text-white hover:text-blue-200 transition duration-300">
                     Manajemen Transaksi
+                  </Link>
+                </li>
+
+                <li>
+                  <Link to="/payment" className="text-white hover:text-blue-200 transition duration-300">
+                    Manajemen Pembayaran
                   </Link>
                 </li>
 

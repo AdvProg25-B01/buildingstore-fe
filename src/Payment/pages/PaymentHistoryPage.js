@@ -1,26 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-// Sesuaikan path impor ini ke file layanan API Anda
-import { getPaymentsByCustomerId as getPaymentsByCustomerIdApi } from '../api/PaymentApi'; // Asumsi ini ada di paymentApiService.js
-import customerService from '../../services/customerService'; // Impor customerService
+import { getPaymentsByCustomerId as getPaymentsByCustomerIdApi } from '../api/PaymentApi';
+import customerService from '../../services/customerService';
 
 function PaymentHistoryPage() {
     const navigate = useNavigate();
 
-    // State untuk daftar pelanggan dan pelanggan yang dipilih
     const [customers, setCustomers] = useState([]);
     const [selectedCustomerId, setSelectedCustomerId] = useState('');
 
-    // State untuk daftar pembayaran pelanggan yang dipilih
     const [payments, setPayments] = useState([]);
 
-    // State untuk loading dan error
     const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
     const [fetchCustomersError, setFetchCustomersError] = useState(null);
     const [isLoadingPayments, setIsLoadingPayments] = useState(false);
     const [fetchPaymentsError, setFetchPaymentsError] = useState(null);
 
-    // Mengambil daftar semua pelanggan saat komponen dimuat
     useEffect(() => {
         const fetchAllCustomers = async () => {
             setIsLoadingCustomers(true);
@@ -45,17 +40,16 @@ function PaymentHistoryPage() {
         fetchAllCustomers();
     }, []);
 
-    // Mengambil riwayat pembayaran ketika pelanggan dipilih
     useEffect(() => {
         const fetchCustomerPayments = async () => {
             if (!selectedCustomerId) {
-                setPayments([]); // Kosongkan daftar pembayaran jika tidak ada pelanggan dipilih
+                setPayments([]);
                 return;
             }
 
             setIsLoadingPayments(true);
             setFetchPaymentsError(null);
-            setPayments([]); // Kosongkan pembayaran sebelumnya saat memuat yang baru
+            setPayments([]);
             try {
                 const customerPayments = await getPaymentsByCustomerIdApi(selectedCustomerId);
                 setPayments(customerPayments || []);
@@ -70,7 +64,7 @@ function PaymentHistoryPage() {
         };
 
         fetchCustomerPayments();
-    }, [selectedCustomerId]); // Jalankan efek ini setiap kali selectedCustomerId berubah
+    }, [selectedCustomerId]);
 
     const handleCustomerChange = (event) => {
         setSelectedCustomerId(event.target.value);
@@ -80,7 +74,6 @@ function PaymentHistoryPage() {
         navigate(`/payment/update/${paymentId}`);
     };
 
-    // Color Palette
     const primaryDark = '#201E43';
     const secondaryDark = '#134B70';
     const secondaryLight = '#508C9B';
@@ -89,9 +82,8 @@ function PaymentHistoryPage() {
     const inputBackgroundColor = '#2a2c52';
     const inputBorderColor = '#508C9B';
     const errorColor = '#E74C3C';
-    const tableHeaderBg = '#2c3e50'; // Warna untuk header tabel
+    const tableHeaderBg = '#2c3e50';
 
-    // Styles
     const containerStyle = {
         padding: '40px 20px',
         fontFamily: "'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif",
@@ -117,7 +109,7 @@ function PaymentHistoryPage() {
         flexDirection: 'column',
         alignItems: 'center',
         width: '100%',
-        maxWidth: '900px', // Batasi lebar konten utama
+        maxWidth: '900px',
     };
 
     const selectionContainerStyle = {
@@ -152,7 +144,7 @@ function PaymentHistoryPage() {
 
     const tableContainerStyle = {
         width: '100%',
-        overflowX: 'auto', // Untuk responsivitas tabel di layar kecil
+        overflowX: 'auto',
         marginTop: '20px',
         backgroundColor: inputBackgroundColor,
         borderRadius: '8px',
@@ -205,7 +197,7 @@ function PaymentHistoryPage() {
         cursor: 'pointer',
         transition: 'background-color 0.3s ease, color 0.3s ease',
         fontWeight: '500',
-        marginTop: '40px', // Jarak dari tabel atau pesan error
+        marginTop: '40px',
     };
 
     const hoverBackButtonStyle = {
@@ -227,7 +219,6 @@ function PaymentHistoryPage() {
         borderRadius: '5px',
         border: `1px solid ${errorColor}`,
     };
-
 
     return (
         <div style={containerStyle}>
@@ -316,7 +307,7 @@ function PaymentHistoryPage() {
                 )}
 
                 <button
-                    onClick={() => navigate('/payment')} // Arahkan kembali ke halaman manajemen utama
+                    onClick={() => navigate('/payment')}
                     style={backButtonStyle}
                     onMouseEnter={(e) => Object.assign(e.target.style, hoverBackButtonStyle)}
                     onMouseLeave={(e) => Object.assign(e.target.style, {

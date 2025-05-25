@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { X, Package, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import supplierService from '../services/supplierService';
+import { getProductsBySupplier } from '../services/ProductApi';
 
 const SupplierManagementPage = () => {
   const [suppliers, setSuppliers] = useState([]);
@@ -14,6 +17,12 @@ const SupplierManagementPage = () => {
     address: ''
   });
   const [editingId, setEditingId] = useState(null);
+
+  // Products modal state
+  const [showProductsModal, setShowProductsModal] = useState(false);
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
+  const [supplierProducts, setSupplierProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
 
   // Fetch suppliers on component mount
   useEffect(() => {
@@ -103,6 +112,33 @@ const SupplierManagementPage = () => {
         console.error(err);
       }
     }
+  };
+
+const handleViewProducts = async (supplier) => {
+  setSelectedSupplier(supplier);
+  setShowProductsModal(true);
+  setLoadingProducts(true);
+  
+  try {
+    // Using our workaround function that filters products client-side
+    const response = await getProductsBySupplier(supplier.id);
+    setSupplierProducts(response.data || []);
+    
+    // If no products were found through the filter, show an appropriate message
+    if (response.data.length === 0) {
+      console.log(`No products found for supplier: ${supplier.name}`);
+    }
+  } catch (err) {
+    console.error('Error fetching supplier products:', err);
+  } finally {
+    setLoadingProducts(false);
+  }
+};
+
+  const closeProductsModal = () => {
+    setShowProductsModal(false);
+    setSelectedSupplier(null);
+    setSupplierProducts([]);
   };
 
   if (loading && suppliers.length === 0) {
@@ -222,6 +258,12 @@ const SupplierManagementPage = () => {
                   <td className="px-6 py-4 whitespace-nowrap">{supplier.address}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button
+                      onClick={() => handleViewProducts(supplier)}
+                      className="text-blue-600 hover:text-blue-900 mr-3 bg-blue-100 px-3 py-1 rounded-lg flex items-center"
+                    >
+                      <Package className="w-4 h-4 mr-1" /> View Products
+                    </button>
+                    <button
                       onClick={() => handleEdit(supplier)}
                       className="text-blue-600 hover:text-blue-900 mr-3"
                     >
@@ -244,6 +286,101 @@ const SupplierManagementPage = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Supplier Products Modal */}
+      {showProductsModal && selectedSupplier && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-800">
+                Products from {selectedSupplier.name}
+              </h2>
+              <button
+                onClick={closeProductsModal}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(80vh - 120px)' }}>
+              {loadingProducts ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
+                </div>
+              ) : supplierProducts.length > 0 ? (
+                <div>
+                  <p className="text-gray-600 mb-4">
+                    Showing {supplierProducts.length} products supplied by {selectedSupplier.name}
+                  </p>
+                  
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {supplierProducts.map((product) => (
+                        <tr key={product.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {product.name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {product.category}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                              ${parseInt(product.stock) > 10 ? 'bg-green-100 text-green-800' : 
+                                parseInt(product.stock) > 0 ? 'bg-yellow-100 text-yellow-800' : 
+                                'bg-red-100 text-red-800'}`}>
+                              {product.stock}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            Rp {parseFloat(product.price).toLocaleString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Link 
+                              to={`/product/edit/${encodeURIComponent(product.name)}`}
+                              className="text-blue-600 hover:text-blue-900 flex items-center"
+                            >
+                              <ExternalLink size={16} className="mr-1" /> View Details
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="py-12 text-center">
+                  <div className="inline-flex bg-blue-100 rounded-full p-3 mb-4">
+                    <Package className="text-blue-700" size={32} />
+                  </div>
+                  <h3 className="text-xl font-medium text-gray-900 mb-2">No Products Found</h3>
+                  <p className="text-gray-500">
+                    This supplier doesn't have any products assigned yet.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end">
+              <button
+                onClick={closeProductsModal}
+                className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

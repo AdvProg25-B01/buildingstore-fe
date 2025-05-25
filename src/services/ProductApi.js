@@ -22,3 +22,22 @@ export const removeSupplierFromProduct = (productId) =>
 // New function to fetch supplier details for a product
 export const getSupplierForProduct = (productId) =>
   axios.get(`${BASE_PRODUCT_URL}/${productId}/supplier`);
+
+export const getProductsBySupplier = async (supplierId) => {
+  try {
+    const response = await getAllProducts();
+    
+    const filteredProducts = response.data.filter(product => 
+      product.supplierId === supplierId || 
+      (product.supplier && product.supplier.id === supplierId)
+    );
+    
+    return {
+      data: filteredProducts,
+      status: 200
+    };
+  } catch (error) {
+    console.error("Error filtering products by supplier:", error);
+    throw error;
+  }
+};

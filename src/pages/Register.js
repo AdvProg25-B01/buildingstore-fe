@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Users, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import authService from '../services/authService';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Register = () => {
     const [name, setName] = useState('');
@@ -15,11 +17,15 @@ const Register = () => {
     const navigate = useNavigate();
     
     const validatePassword = () => {
-        if (password !== confirmPassword) {
-            setPasswordError('Passwords do not match');
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+        
+        if (!passwordRegex.test(password)) {
+            setPasswordError(
+            'Password must be at least 8 characters, include uppercase, lowercase, number, and special character.'
+            );
             return false;
-        } else if (password.length < 8) {
-            setPasswordError('Password must be at least 8 characters long, with at least one uppercase letter, one lowercase letter, one special characters, and one number');
+        } else if (password !== confirmPassword) {
+            setPasswordError('Passwords do not match.');
             return false;
         } else {
             setPasswordError('');
@@ -35,12 +41,17 @@ const Register = () => {
         }
         
         try {
-            const response = await authService.register(name, email, password, role);
-            
+            await authService.register(name, email, password, role);
+            toast.success('Registration successful! Please login.', {
+                position: 'top-right',
+                autoClose: 3000,
+            });
             navigate('/login');
-            alert('Registration successful! Please login with your credentials.');
-        } catch (error) {
-            setErrorMessage('Registration failed! Please try again.');
+            } catch (error) {
+            toast.error('Registration failed! Please try again.', {
+                position: 'top-right',
+                autoClose: 3000,
+            });
         }
     };
     

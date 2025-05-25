@@ -22,6 +22,7 @@ import PaymentPage      from './Payment/pages/PaymentPage'
 import CreatePaymentPage from "./Payment/pages/CreatePaymentPage";
 import UpdatePaymentStatusPage from "./Payment/pages/UpdatePaymentStatusPage";
 import PaymentHistoryPage from "./Payment/pages/PaymentHistoryPage";
+import ProfilePage from './pages/Profile';
 
 function App() {
   return (
@@ -158,6 +159,15 @@ function App() {
                 element={
                     <ProtectedRoute allowedRoles={['KASIR', 'ADMIN']}>
                         <PaymentHistoryPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/profile"
+                element={
+                    <ProtectedRoute allowedRoles={['KASIR', 'ADMIN']}>
+                        <ProfilePage />
                     </ProtectedRoute>
                 }
             />

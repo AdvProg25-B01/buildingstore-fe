@@ -60,7 +60,11 @@ const Register = () => {
             <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
                 <div className="flex flex-col items-center mb-8">
                     <div className="bg-blue-100 rounded-full p-3 mb-4">
-                        <Users size={40} className="text-blue-700" />
+                        <img
+                            src={require('../assets/logo/BuildingStore-StrokePutih.png')}
+                            alt="Logo"
+                            className="w-20 h-auto"
+                        />
                     </div>
                     <h2 className="text-3xl font-bold text-blue-900">Register</h2>
                 </div>

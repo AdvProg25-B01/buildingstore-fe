@@ -23,10 +23,27 @@ import CreatePaymentPage from "./Payment/pages/CreatePaymentPage";
 import UpdatePaymentStatusPage from "./Payment/pages/UpdatePaymentStatusPage";
 import PaymentHistoryPage from "./Payment/pages/PaymentHistoryPage";
 
+import CustomerManagementPage from './pages/CustomerManagementPage';
+
+import { ToastContainer } from 'react-toastify'; // <-- Import ToastContainer
+import 'react-toastify/dist/ReactToastify.css'; // <-- Import CSS Toastify
+
 function App() {
   return (
     <Router>
       <Navbar />
+      <ToastContainer // <-- Tambahkan ToastContainer di sini
+        position="top-right"
+        autoClose={3000} // Durasi notifikasi (ms)
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored" // atau "light", "dark"
+      />
         <Routes>
             {/* Public */}
             <Route path="/"        element={<LandingPage />} />
@@ -84,6 +101,15 @@ function App() {
                     </ProtectedRoute>
                 }
             />
+
+            <Route
+          path="/manage-customers" 
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN', 'KASIR']}> {/* dd */}
+              <CustomerManagementPage />
+            </ProtectedRoute>
+          }
+          />
 
             {/* Common for Kasir and Admin */}
             <Route

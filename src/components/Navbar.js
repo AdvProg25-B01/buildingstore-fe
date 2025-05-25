@@ -45,33 +45,63 @@ const Navbar = () => {
             {/* Menu untuk pengguna yang sudah login */}
             {token && (
               <>
-                {/* Link khusus ADMIN */}
-                {role === 'ADMIN' && (
-                  <li>
-                    <Link to="/create-user" className="text-white hover:text-blue-200 transition duration-300">
-                      Create New User
-                    </Link>
-                  </li>
-                )}
+                <li>
+                  <Link to="/admin-dashboard" className="text-white hover:text-blue-200 transition duration-300">
+                    Dashboard
+                  </Link>
+                </li>
 
-                {/* 👇 Link Manajemen Pelanggan untuk ADMIN dan KASIR */}
-                {(role === 'ADMIN' || role === 'KASIR') && (
-                  <li>
-                    <Link to="/manage-customers" className="text-white hover:text-blue-200 transition duration-300">
-                      Manajemen Pelanggan
-                    </Link>
-                  </li>
-                )}
+                <li>
+                  <Link to="/manajemen-transaksi" className="text-white hover:text-blue-200 transition duration-300">
+                    Manajemen Transaksi
+                  </Link>
+                </li>
+
+                <li>
+                  <Link to="/product/list" className="text-white hover:text-blue-200 transition duration-300">
+                    Manajemen Produk
+                  </Link>
+                </li>
+
+                <li>
+                  <Link to="/create-user" className="text-white hover:text-blue-200 transition duration-300">
+                    Create New User
+                  </Link>
+                </li>
                 
-                {/* Tombol Logout (umum untuk semua role yang login) */}
-              <li>
-                <button 
-                  onClick={handleLogout}
-                  className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition duration-300"
-                >
-                  Logout
-                </button>
-              </li>
+                <li>
+                  <button 
+                    onClick={handleLogout}
+                    className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition duration-300"
+                  >
+                    Logout
+                  </button>
+                </li>
+              </>
+            )}
+            
+            {token && role === 'KASIR' && (
+              <>
+                <li>
+                  <Link to="/kasir-dashboard" className="text-white hover:text-blue-200 transition duration-300">
+                    Dashboard
+                  </Link>
+                </li>
+
+                <li>
+                  <Link to="/manajemen-transaksi" className="text-white hover:text-blue-200 transition duration-300">
+                    Manajemen Transaksi
+                  </Link>
+                </li>
+
+                <li>
+                  <button 
+                    onClick={handleLogout}
+                    className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition duration-300"
+                  >
+                    Logout
+                  </button>
+                </li>
               </>
             )}
           </div>

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_PRODUCT_URL = process.env.REACT_APP_API_TRANSACTION_URL;
+const API_PRODUCT_URL = process.env.REACT_APP_API_PRODUCT_URL;
 const BASE_PRODUCT_URL = `${API_PRODUCT_URL}/product`;
 
 // Get all products with supplier information

@@ -8,47 +8,26 @@ const KasirDashboard = () => {
 
   const quickActions = [
     {
-      title: "New Transaction",
-      description: "Start a new sales transaction",
-      icon: Plus,
-      link: "/kasir/new-transaction",
+      title: "Transaction Management",
+      description: "Create and monitor all sales transactions and payments",
+      icon: ShoppingCart,
+      link: "/manajemen-transaksi",
       color: "bg-green-50 hover:bg-green-100 border-green-200"
     },
     {
-      title: "Transaction History",
-      description: "View all completed transactions",
-      icon: FileText,
-      link: "/kasir/transactions",
-      color: "bg-blue-50 hover:bg-blue-100 border-blue-200"
-    },
-    {
       title: "Customer Management",
-      description: "Add or update customer information",
+      description: "Manage customer data and purchase history",
       icon: Users,
-      link: "/kasir/customers",
+      link: "/manage-customers",
       color: "bg-purple-50 hover:bg-purple-100 border-purple-200"
     },
     {
-      title: "Product Lookup",
-      description: "Search products and check prices",
-      icon: Search,
-      link: "/kasir/products",
+      title: "Payment Management",
+      description: "Track payments and installment status",
+      icon: CreditCard,
+      link: "/payment",
       color: "bg-indigo-50 hover:bg-indigo-100 border-indigo-200"
     },
-    {
-      title: "Payment Processing",
-      description: "Process payments and installments",
-      icon: CreditCard,
-      link: "/kasir/payments",
-      color: "bg-teal-50 hover:bg-teal-100 border-teal-200"
-    },
-    {
-      title: "Daily Report",
-      description: "Generate today's sales report",
-      icon: TrendingUp,
-      link: "/kasir/daily-report",
-      color: "bg-orange-50 hover:bg-orange-100 border-orange-200"
-    }
   ];
 
   return (
@@ -103,7 +82,7 @@ const KasirDashboard = () => {
               <span>Process Payment</span>
             </Link>
             <Link 
-              to="/"
+              to="/manage-customers"
               className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-8 py-4 rounded-lg font-medium transition-colors duration-300 flex items-center space-x-2"
             >
               <Users size={20} />

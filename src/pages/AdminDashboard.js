@@ -25,7 +25,7 @@ const AdminDashboard = () => {
       title: "Customer Management",
       description: "Manage customer data and purchase history",
       icon: Users,
-      link: "/admin/customers",
+      link: "/manage-customers",
       color: "bg-purple-50 hover:bg-purple-100 border-purple-200"
     },
     {

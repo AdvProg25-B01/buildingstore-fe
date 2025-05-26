@@ -1,4 +1,4 @@
-const API_PRODUCT_URL = process.env.REACT_APP_API_TRANSACTION_URL || 'http://localhost:8081';
+const API_PRODUCT_URL = process.env.REACT_APP_API_PRODUCT_URL || 'http://localhost:8081';
 const BASE_TRANSACTION_URL = `${API_PRODUCT_URL}/api/transactions`;
 
 const getAuthHeaders = () => ({

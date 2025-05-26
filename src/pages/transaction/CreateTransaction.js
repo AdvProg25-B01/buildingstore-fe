@@ -5,6 +5,9 @@ import { ShoppingCart, Plus, Minus, User, CreditCard, Save, CheckCircle, Banknot
 import { getAllProducts } from '../../services/ProductApi';
 import { transactionService } from '../../services/transactionService';
 
+const API_CUSTOMER_URL = process.env.REACT_APP_CUSTOMER_API_URL || 'http://localhost:8082';
+const BASE_CUSTOMER_URL = `${API_CUSTOMER_URL}/api/customers`;
+
 const CreateTransaction = () => {
   const [formData, setFormData] = useState({
     customerId: '',
@@ -68,7 +71,7 @@ const CreateTransaction = () => {
   const handleSearchCustomer = async () => {
     setIsSearching(true);
     try {
-      const response = await fetch(`http://localhost:8082/api/customers?searchTerm=${encodeURIComponent(searchQuery)}&searchBy=fullname`);
+      const response = await fetch(`${BASE_CUSTOMER_URL}?searchTerm=${encodeURIComponent(searchQuery)}&searchBy=fullname`);
       if (response.ok) {
         const data = await response.json();
         setSearchResults(data);
@@ -91,7 +94,7 @@ const CreateTransaction = () => {
     
     setErrorMessage('');
     try {
-      const response = await fetch('http://localhost:8082/api/customers', {
+      const response = await fetch(BASE_CUSTOMER_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

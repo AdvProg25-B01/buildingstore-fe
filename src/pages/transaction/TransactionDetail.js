@@ -5,6 +5,10 @@ import {
   X, CheckCircle, AlertTriangle, Trash2, XCircle, Clock
 } from 'lucide-react';
 import { transactionService } from '../../services/transactionService';
+import { getPaymentById } from '../../Payment/api/PaymentApi';
+
+const API_CUSTOMER_URL = process.env.REACT_APP_CUSTOMER_API_URL || 'http://localhost:8082';
+const BASE_CUSTOMER_URL = `${API_CUSTOMER_URL}/api/customers`;
 
 const TransactionDetail = () => {
   const { id } = useParams();
@@ -41,12 +45,12 @@ const TransactionDetail = () => {
     setErrorMessage('');
     try {
       const transactionData = await transactionService.getTransactionById(id);
-      const customerRes = await fetch(`http://localhost:8082/api/customers/${transactionData.customerId}`);
+      const customerRes = await fetch(`${BASE_CUSTOMER_URL}/${transactionData.customerId}`);
       const customerData = await customerRes.json();
       
       let paymentData = null;
       if (transactionData.paymentId) {
-        const paymentRes = await fetch(`http://localhost:8081/payments/${transactionData.paymentId}`);
+        const paymentRes = await getPaymentById(transactionData.paymentId);
         paymentData = await paymentRes.json();
       }
 

@@ -3,6 +3,9 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { History, Search, Eye, Edit, X, Calendar, User, CreditCard, Trash } from 'lucide-react';
 import { transactionService } from '../../services/transactionService';
 
+const API_CUSTOMER_URL = process.env.REACT_APP_CUSTOMER_API_URL || 'http://localhost:8082';
+const BASE_CUSTOMER_URL = `${API_CUSTOMER_URL}/api/customers`;
+
 const TransactionHistory = () => {
   const [transactions, setTransactions] = useState([]);
   const [filteredTransactions, setFilteredTransactions] = useState([]);
@@ -44,7 +47,7 @@ const TransactionHistory = () => {
       // Handle different possible response structures
       const transactionData = Array.isArray(response) ? response : response?.data || response?.transactions || [];
 
-      const customersRes = await fetch('http://localhost:8082/api/customers');
+      const customersRes = await fetch(`${BASE_CUSTOMER_URL}`);
       const customersData = await customersRes.json();
 
       const customerMap = customersData.reduce((acc, customer) => {

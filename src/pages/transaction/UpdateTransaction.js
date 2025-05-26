@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Edit, Save, ArrowLeft, User, CreditCard, Package, AlertCircle, Banknote } from 'lucide-react';
 import { transactionService, TransactionStatus } from '../../services/transactionService';
+import { getPaymentById } from '../../Payment/api/PaymentApi';
+
+const API_CUSTOMER_URL = process.env.REACT_APP_CUSTOMER_API_URL || 'http://localhost:8082';
+const BASE_CUSTOMER_URL = `${API_CUSTOMER_URL}/api/customers`;
 
 const UpdateTransaction = () => {
   const { id } = useParams();
@@ -38,13 +42,13 @@ const UpdateTransaction = () => {
   const fetchTransaction = async () => {
     try {
       const transactionData = await transactionService.getTransactionById(id);
-      const customerRes = await fetch(`http://localhost:8082/api/customers/${transactionData.customerId}`);
+      const customerRes = await fetch(`${BASE_CUSTOMER_URL}/${transactionData.customerId}`);
       const customerData = await customerRes.json();
       setCustomer(customerData.fullName);
       setTransaction(transactionData);
       
       try {
-        const paymentRes = await fetch(`http://localhost:8081/payments/${transactionData.paymentId}`);
+        const paymentRes = await getPaymentById(transactionData.paymentId);
         const paymentData = await paymentRes.json();
         setPayment(paymentData);
       } catch (paymentError) {

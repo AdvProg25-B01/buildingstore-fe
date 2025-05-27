@@ -40,29 +40,34 @@ const UpdateTransaction = () => {
   }
 
   const fetchTransaction = async () => {
+    setLoading(true);
+    setErrorMessage('');
     try {
       const transactionData = await transactionService.getTransactionById(id);
-      const customerRes = await fetch(`${BASE_CUSTOMER_URL}/${transactionData.customerId}`);
-      const customerData = await customerRes.json();
+
+      const customerData = await fetch(
+        `${BASE_CUSTOMER_URL}/${transactionData.customerId}`
+      ).then(res => res.json());
+
       setCustomer(customerData.fullName);
       setTransaction(transactionData);
-      
       try {
-        const paymentRes = await getPaymentById(transactionData.paymentId);
-        const paymentData = await paymentRes.json();
+        const paymentData = transactionData.paymentId
+          ? await getPaymentById(transactionData.paymentId)
+          : null;
         setPayment(paymentData);
       } catch (paymentError) {
         console.warn('Could not fetch payment data:', paymentError);
         setPayment(null);
       }
-      
-      // Set initial form data
+
       setUpdateData({
         customerId: transactionData.customerId || '',
         paymentMethod: transactionData.paymentMethod || 'CASH',
-        amount: transactionData.payment?.amount || 0
+        amount:
+          transactionData.payment?.amount ??
+          null
       });
-
     } catch (error) {
       console.error('Error fetching transaction:', error);
       setErrorMessage(error.message || 'Gagal memuat data transaksi');

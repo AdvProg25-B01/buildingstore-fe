@@ -45,14 +45,14 @@ const TransactionDetail = () => {
     setErrorMessage('');
     try {
       const transactionData = await transactionService.getTransactionById(id);
-      const customerRes = await fetch(`${BASE_CUSTOMER_URL}/${transactionData.customerId}`);
-      const customerData = await customerRes.json();
-      
-      let paymentData = null;
-      if (transactionData.paymentId) {
-        const paymentRes = await getPaymentById(transactionData.paymentId);
-        paymentData = await paymentRes.json();
-      }
+
+      const customerData = await fetch(
+        `${BASE_CUSTOMER_URL}/${transactionData.customerId}`
+      ).then(res => res.json());
+
+      const paymentData = transactionData.paymentId
+        ? await getPaymentById(transactionData.paymentId)
+        : null;
 
       setCustomer(customerData.fullName);
       setTransaction(transactionData);
